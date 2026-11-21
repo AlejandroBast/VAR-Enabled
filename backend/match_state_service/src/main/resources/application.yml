@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: match-state-service
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: match-state-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.varenabled.contratos
+        spring.json.value.default.type: com.varenabled.contratos.EventoPartidoDto
