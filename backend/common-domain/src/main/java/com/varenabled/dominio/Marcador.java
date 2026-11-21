@@ -1,9 +1,9 @@
 package com.varenabled.dominio;
 
-public record Marcador(int golesLocal, int golesVisitante) {
+public record Marcador(int local, int visitante) {
 
     public Marcador {
-        if (golesLocal < 0 || golesVisitante < 0) {
+        if (local < 0 || visitante < 0) {
             throw new IllegalArgumentException("El marcador no puede ser negativo");
         }
     }
@@ -12,15 +12,23 @@ public record Marcador(int golesLocal, int golesVisitante) {
         return new Marcador(0, 0);
     }
 
-    public Marcador sumarGolDe(Equipo equipo) {
+    public Marcador sumarPuntosDe(Equipo equipo, int puntos) {
         return equipo == Equipo.LOCAL
-                ? new Marcador(golesLocal + 1, golesVisitante)
-                : new Marcador(golesLocal, golesVisitante + 1);
+                ? new Marcador(local + puntos, visitante)
+                : new Marcador(local, visitante + puntos);
+    }
+
+    public Marcador restarPuntosDe(Equipo equipo, int puntos) {
+        return equipo == Equipo.LOCAL
+                ? new Marcador(local - puntos, visitante)
+                : new Marcador(local, visitante - puntos);
+    }
+
+    public Marcador sumarGolDe(Equipo equipo) {
+        return sumarPuntosDe(equipo, 1);
     }
 
     public Marcador restarGolDe(Equipo equipo) {
-        return equipo == Equipo.LOCAL
-                ? new Marcador(golesLocal - 1, golesVisitante)
-                : new Marcador(golesLocal, golesVisitante - 1);
+        return restarPuntosDe(equipo, 1);
     }
 }
