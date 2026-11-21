@@ -44,4 +44,20 @@ class MarcadorTest {
 
         assertEquals(Marcador.enCero(), resultado);
     }
+
+    @Test
+    void sumarPuntosDeUnaCanastaDeTresSumaLosTresAlLocal() {
+        Marcador resultado = Marcador.enCero().sumarPuntosDe(Equipo.LOCAL, 3);
+
+        assertEquals(new Marcador(3, 0), resultado);
+    }
+
+    @Test
+    void restarPuntosDevuelveElMarcadorAnterior() {
+        Marcador conUnaCanastaDeTres = new Marcador(0, 3);
+
+        Marcador resultado = conUnaCanastaDeTres.restarPuntosDe(Equipo.VISITANTE, 3);
+
+        assertEquals(Marcador.enCero(), resultado);
+    }
 }

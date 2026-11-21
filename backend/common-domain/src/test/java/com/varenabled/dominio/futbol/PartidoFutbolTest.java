@@ -1,7 +1,7 @@
 package com.varenabled.dominio.futbol;
 
 import com.varenabled.dominio.Equipo;
-import com.varenabled.dominio.GolInexistenteException;
+import com.varenabled.dominio.EventoInexistenteException;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
@@ -56,7 +56,7 @@ class PartidoFutbolTest {
     void anularUnGolQueNoExisteLanzaExcepcion() {
         PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
 
-        assertThrows(GolInexistenteException.class,
+        assertThrows(EventoInexistenteException.class,
                 () -> partido.anularGolPorVar(new IdEvento("evt_fantasma")));
     }
 
@@ -67,7 +67,7 @@ class PartidoFutbolTest {
         partido.anotarGol(idGol, Equipo.LOCAL);
         partido.anularGolPorVar(idGol);
 
-        assertThrows(GolInexistenteException.class,
+        assertThrows(EventoInexistenteException.class,
                 () -> partido.anularGolPorVar(idGol));
     }
 

@@ -1,7 +1,7 @@
 package com.varenabled.dominio.futbol;
 
 import com.varenabled.dominio.Equipo;
-import com.varenabled.dominio.GolInexistenteException;
+import com.varenabled.dominio.EventoInexistenteException;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
@@ -30,7 +30,7 @@ public class PartidoFutbol extends PartidoDeportivo {
 
     public void anularGolPorVar(IdEvento idEventoAnulado) {
         Gol gol = buscarGolActivo(idEventoAnulado)
-                .orElseThrow(() -> new GolInexistenteException(idEventoAnulado));
+                .orElseThrow(() -> new EventoInexistenteException(idEventoAnulado));
 
         golesActivos.remove(gol);
         marcador = marcador.restarGolDe(gol.equipo());
