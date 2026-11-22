@@ -21,10 +21,16 @@
             <span class="insignia revision">Revisión VAR</span>
           } @else if (partido.marcador.estado === 'FINALIZADO') {
             <span class="insignia finalizado">Finalizado</span>
+          } @else if (partido.marcador.estado === 'POR_JUGAR') {
+            <span class="insignia por-jugar">Por jugar</span>
           } @else {
             <span class="insignia en-juego">En juego</span>
           }
-          <span class="minuto">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
+          @if (partido.marcador.estado === 'POR_JUGAR') {
+            <span class="minuto">--</span>
+          } @else {
+            <span class="minuto">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
+          }
           <span class="marcador-mini">{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
           <span class="id">Partido {{ partido.marcador.match_id }}</span>
         </span>
@@ -43,10 +49,16 @@
           <span class="insignia grande revision">Revisión VAR en curso</span>
         } @else if (partido.marcador.estado === 'FINALIZADO') {
           <span class="insignia grande finalizado">Finalizado</span>
+        } @else if (partido.marcador.estado === 'POR_JUGAR') {
+          <span class="insignia grande por-jugar">Por jugar</span>
         } @else {
           <span class="insignia grande en-juego">En juego</span>
         }
-        <p class="resumen">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} <b>|</b> {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</p>
+        @if (partido.marcador.estado === 'POR_JUGAR') {
+          <p class="resumen">El partido todavía no empieza</p>
+        } @else {
+          <p class="resumen">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} <b>|</b> {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</p>
+        }
 
         <div class="enfrentamiento">
           <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>Local</span></div>

@@ -8,7 +8,7 @@ interface Marcador {
   visitante: number;
   minuto: number;
   minuto_extra: number;
-  estado: 'EN_JUEGO' | 'EN_REVISION' | 'FINALIZADO';
+  estado: 'POR_JUGAR' | 'EN_JUEGO' | 'EN_REVISION' | 'FINALIZADO';
 }
 
 /** Lo que manda dashboard_backend por cada evento del partido (AlertaPartidoDto). */
