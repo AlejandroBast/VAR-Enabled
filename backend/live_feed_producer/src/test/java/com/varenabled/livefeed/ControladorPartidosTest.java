@@ -3,6 +3,7 @@ package com.varenabled.livefeed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.varenabled.contratos.EventoPartidoDto;
+import com.varenabled.dominio.futbol.MinutoInvalidoException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,6 +15,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,24 +69,43 @@ class ControladorPartidosTest {
 
     @Test
     void crearUnEventoParaUnPartidoExistenteDevuelve201() throws Exception {
-        EventoPartidoDto evento = new EventoPartidoDto("101", "FOOTBALL", "GOAL", "home", "evt_g_abc123", null, null, Instant.now());
-        when(gestor.registrarEvento("101", "GOAL", "home", null, null)).thenReturn(evento);
+        EventoPartidoDto evento = new EventoPartidoDto("101", "FOOTBALL", "GOAL", "home", "evt_g_abc123", null, 23, 0, null, Instant.now());
+        when(gestor.registrarEvento("101", "GOAL", "home", null, 23, null, null)).thenReturn(evento);
 
         mockMvc.perform(post("/api/partidos/101/eventos")
                         .contentType("application/json")
-                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\"}"))
+                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\",\"minuto\":23}"))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(objectMapper.writeValueAsString(evento)));
     }
 
     @Test
+    void crearUnEventoSinMinutoDevuelve400() throws Exception {
+        mockMvc.perform(post("/api/partidos/101/eventos")
+                        .contentType("application/json")
+                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void crearUnEventoParaUnPartidoInexistenteDevuelve404() throws Exception {
-        when(gestor.registrarEvento(eq("999"), any(), any(), any(), any()))
+        when(gestor.registrarEvento(eq("999"), any(), any(), any(), anyInt(), any(), any()))
                 .thenThrow(new PartidoNoEncontradoException("999"));
 
         mockMvc.perform(post("/api/partidos/999/eventos")
                         .contentType("application/json")
-                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\"}"))
+                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\",\"minuto\":23}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void crearUnEventoConUnMinutoInvalidoDevuelve400() throws Exception {
+        when(gestor.registrarEvento(eq("101"), any(), any(), any(), anyInt(), any(), any()))
+                .thenThrow(new MinutoInvalidoException("El minuto debe estar entre 1 y 90"));
+
+        mockMvc.perform(post("/api/partidos/101/eventos")
+                        .contentType("application/json")
+                        .content("{\"event_type\":\"GOAL\",\"team\":\"home\",\"minuto\":120}"))
+                .andExpect(status().isBadRequest());
     }
 }
