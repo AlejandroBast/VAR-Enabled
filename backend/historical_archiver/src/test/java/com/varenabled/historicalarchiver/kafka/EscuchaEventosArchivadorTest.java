@@ -37,9 +37,9 @@ class EscuchaEventosArchivadorTest {
     void unGolAnuladoQuedaRegistradoEnLasTresTablas() throws InterruptedException {
         Instant momentoDelGol = Instant.now();
         kafkaTemplate.send("match_events", "123",
-                new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, momentoDelGol));
+                new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 10, 0, null, momentoDelGol));
         kafkaTemplate.send("match_events", "123",
-                new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", null, momentoDelGol.plusSeconds(5)));
+                new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", 12, 0, null, momentoDelGol.plusSeconds(5)));
 
         esperarHasta(() -> marcadorRepositorio.findById("123")
                 .map(marcador -> marcador.getGolesLocal() == 0)

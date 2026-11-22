@@ -5,5 +5,5 @@ import com.varenabled.dominio.Marcador;
 
 public interface PublicadorMarcadorPort {
 
-    void publicarMarcador(IdPartido idPartido, Marcador marcador);
+    void publicarMarcador(IdPartido idPartido, Marcador marcador, int minuto, int minutoExtra);
 }

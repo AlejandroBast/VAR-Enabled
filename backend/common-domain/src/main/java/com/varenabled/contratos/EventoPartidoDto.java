@@ -9,7 +9,9 @@ public record EventoPartidoDto(
         String team,
         String eventId,
         String annulsEventId,
-        Integer points,
+        Integer minuto,
+        Integer minutoExtra,
+        Integer minutosAgregados,
         Instant timestamp
 ) {
 
@@ -19,6 +21,12 @@ public record EventoPartidoDto(
         }
         if (eventType == null || eventType.isBlank()) {
             throw new IllegalArgumentException("El eventType no puede ser nulo ni vacio");
+        }
+        if (minuto != null && (minuto < 1 || minuto > 90)) {
+            throw new IllegalArgumentException("El minuto debe estar entre 1 y 90");
+        }
+        if (minutoExtra != null && (minutoExtra < 0 || minutoExtra > 10)) {
+            throw new IllegalArgumentException("El minutoExtra debe estar entre 0 y 10");
         }
     }
 }

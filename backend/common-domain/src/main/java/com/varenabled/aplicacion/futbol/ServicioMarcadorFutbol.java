@@ -21,24 +21,40 @@ public class ServicioMarcadorFutbol {
         this.publicadorAlertas = publicadorAlertas;
     }
 
-    public void procesarGol(IdPartido idPartido, IdEvento idEvento, Equipo equipo) {
+    public void procesarGol(IdPartido idPartido, IdEvento idEvento, Equipo equipo, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
 
         partido.anotarGol(idEvento, equipo);
+        partido.actualizarMinuto(minuto, minutoExtra);
 
         repositorio.guardar(partido);
-        publicadorMarcador.publicarMarcador(idPartido, partido.obtenerMarcador());
+        publicarMarcador(idPartido, partido);
         publicadorAlertas.publicarAlerta(idPartido, idEvento, "¡GOL del equipo " + equipo + "!");
     }
 
-    public void procesarGolAnulado(IdPartido idPartido, IdEvento idEventoAnulado) {
+    public void procesarGolAnulado(IdPartido idPartido, IdEvento idEventoAnulado, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
 
         partido.anularGolPorVar(idEventoAnulado);
+        partido.actualizarMinuto(minuto, minutoExtra);
 
         repositorio.guardar(partido);
-        publicadorMarcador.publicarMarcador(idPartido, partido.obtenerMarcador());
+        publicarMarcador(idPartido, partido);
         publicadorAlertas.publicarAlerta(idPartido, idEventoAnulado, "¡GOL ANULADO POR EL VAR!");
+    }
+
+    public void actualizarMinuto(IdPartido idPartido, int minuto, int minutoExtra) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.actualizarMinuto(minuto, minutoExtra);
+
+        repositorio.guardar(partido);
+        publicarMarcador(idPartido, partido);
+    }
+
+    private void publicarMarcador(IdPartido idPartido, PartidoFutbol partido) {
+        publicadorMarcador.publicarMarcador(
+                idPartido, partido.obtenerMarcador(), partido.obtenerMinutoActual(), partido.obtenerMinutoExtraActual());
     }
 
     private PartidoFutbol obtenerOCrear(IdPartido idPartido) {

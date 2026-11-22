@@ -17,10 +17,10 @@ public class PublicadorMarcadorRabbit implements PublicadorMarcadorPort {
     }
 
     @Override
-    public void publicarMarcador(IdPartido idPartido, Marcador marcador) {
+    public void publicarMarcador(IdPartido idPartido, Marcador marcador, int minuto, int minutoExtra) {
         String routingKey = "score.match_" + idPartido.valor();
         ActualizacionMarcadorDto actualizacion = new ActualizacionMarcadorDto(
-                idPartido.valor(), marcador.local(), marcador.visitante());
+                idPartido.valor(), marcador.local(), marcador.visitante(), minuto, minutoExtra);
 
         rabbitTemplate.convertAndSend(ConfiguracionRabbitMQ.EXCHANGE_MARCADOR, routingKey, actualizacion);
     }

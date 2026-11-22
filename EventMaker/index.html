@@ -129,7 +129,22 @@
           <option value="VAR_CHECK">VAR_CHECK (revisión)</option>
           <option value="GOAL_ANNULLED">GOAL_ANNULLED (gol anulado)</option>
           <option value="MATCH_CONTINUES">MATCH_CONTINUES (sigue el juego)</option>
+          <option value="ADDED_TIME">ADDED_TIME (tiempo añadido)</option>
         </select>
+      </div>
+    </div>
+    <div class="fila">
+      <div>
+        <label for="minuto">Minuto (1-90)</label>
+        <input id="minuto" type="number" min="1" max="90" value="1">
+      </div>
+      <div id="campoMinutoExtra">
+        <label for="minutoExtra">Minuto extra (solo en el 45 o el 90)</label>
+        <input id="minutoExtra" type="number" min="0" max="10" value="0">
+      </div>
+      <div id="campoMinutosAgregados" class="oculto">
+        <label for="minutosAgregados">Minutos a agregar (1-10)</label>
+        <input id="minutosAgregados" type="number" min="1" max="10" value="1">
       </div>
     </div>
     <div class="fila">
@@ -235,6 +250,8 @@ function actualizarCamposSegunTipo() {
   const tipo = $('tipoEvento').value;
   $('campoEquipo').classList.toggle('oculto', tipo !== 'GOAL');
   $('campoAnula').classList.toggle('oculto', tipo !== 'GOAL_ANNULLED');
+  $('campoMinutoExtra').classList.toggle('oculto', tipo === 'ADDED_TIME');
+  $('campoMinutosAgregados').classList.toggle('oculto', tipo !== 'ADDED_TIME');
   if (tipo === 'GOAL_ANNULLED') refrescarGolesAnulables();
 }
 
@@ -260,11 +277,19 @@ $('btnEnviarEvento').onclick = async () => {
   const tipo = $('tipoEvento').value;
   if (!matchId) { registrar('Indicá a qué partido va el evento', 'err'); return; }
 
-  const cuerpo = { event_type: tipo };
+  const minuto = Number($('minuto').value);
+  if (!minuto) { registrar('Indicá el minuto del evento', 'err'); return; }
+
+  const cuerpo = { event_type: tipo, minuto };
   if (tipo === 'GOAL') cuerpo.team = $('equipo').value;
   if (tipo === 'GOAL_ANNULLED') {
     if (!$('anulaEventId').value) { registrar('No hay ningún gol vigente para anular en ese partido', 'err'); return; }
     cuerpo.annuls_event_id = $('anulaEventId').value;
+  }
+  if (tipo === 'ADDED_TIME') {
+    cuerpo.minutos_agregados = Number($('minutosAgregados').value);
+  } else {
+    cuerpo.minuto_extra = Number($('minutoExtra').value) || 0;
   }
 
   try {
@@ -272,7 +297,8 @@ $('btnEnviarEvento').onclick = async () => {
       method: 'POST',
       body: JSON.stringify(cuerpo),
     });
-    registrar(`${evento.event_type} enviado a ${matchId} (event_id=${evento.event_id})`, 'ok');
+    const minutoTexto = evento.minuto_extra ? `${evento.minuto}+${evento.minuto_extra}` : `${evento.minuto}`;
+    registrar(`${evento.event_type} enviado a ${matchId} en el minuto ${minutoTexto} (event_id=${evento.event_id})`, 'ok');
     await refrescarGolesAnulables();
   } catch (error) {
     registrar('No se pudo enviar el evento: ' + error.message, 'err');

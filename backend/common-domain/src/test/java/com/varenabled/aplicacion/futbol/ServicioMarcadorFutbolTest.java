@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -43,32 +44,32 @@ class ServicioMarcadorFutbolTest {
     private final IdEvento idEvento = new IdEvento("evt_g1");
 
     @Test
-    void procesarGolCreaElPartidoCuandoNoExisteYPublicaElMarcador() {
+    void procesarGolCreaElPartidoCuandoNoExisteYPublicaElMarcadorConElMinuto() {
         // Arrange
         when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
 
         // Act
-        servicio.procesarGol(idPartido, idEvento, Equipo.LOCAL);
+        servicio.procesarGol(idPartido, idEvento, Equipo.LOCAL, 23, 0);
 
         // Assert
         verify(repositorio).guardar(any(PartidoFutbol.class));
-        verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)));
+        verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)), eq(23), eq(0));
         verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
     @Test
-    void procesarGolAnuladoRevierteElMarcadorYLoPublica() {
+    void procesarGolAnuladoRevierteElMarcadorYLoPublicaConElMinuto() {
         // Arrange
         PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
         partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
         when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
 
         // Act
-        servicio.procesarGolAnulado(idPartido, idEvento);
+        servicio.procesarGolAnulado(idPartido, idEvento, 25, 0);
 
         // Assert
         verify(repositorio).guardar(partidoExistente);
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero());
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 25, 0);
         verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
@@ -80,10 +81,38 @@ class ServicioMarcadorFutbolTest {
 
         // Act + Assert
         assertThrows(EventoInexistenteException.class,
-                () -> servicio.procesarGolAnulado(idPartido, idEvento));
+                () -> servicio.procesarGolAnulado(idPartido, idEvento, 25, 0));
 
         verify(repositorio, never()).guardar(any());
-        verify(publicadorMarcador, never()).publicarMarcador(any(), any());
+        verify(publicadorMarcador, never()).publicarMarcador(any(), any(), anyInt(), anyInt());
         verify(publicadorAlertas, never()).publicarAlerta(any(), any(), anyString());
+    }
+
+    @Test
+    void actualizarMinutoCreaElPartidoCuandoNoExisteYPublicaElMarcadorEnCero() {
+        // Arrange
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
+
+        // Act
+        servicio.actualizarMinuto(idPartido, 1, 0);
+
+        // Assert
+        verify(repositorio).guardar(any(PartidoFutbol.class));
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0);
+        verify(publicadorAlertas, never()).publicarAlerta(any(), any(), anyString());
+    }
+
+    @Test
+    void actualizarMinutoNoCambiaElMarcadorDeUnPartidoConGoles() {
+        // Arrange
+        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
+        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
+
+        // Act
+        servicio.actualizarMinuto(idPartido, 46, 0);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 46, 0);
     }
 }

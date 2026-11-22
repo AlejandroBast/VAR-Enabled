@@ -1,6 +1,7 @@
 package com.varenabled.livefeed;
 
 import com.varenabled.contratos.EventoPartidoDto;
+import com.varenabled.dominio.futbol.MinutoInvalidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,8 +42,13 @@ public class ControladorPartidos {
 
     @PostMapping("/{matchId}/eventos")
     public ResponseEntity<EventoPartidoDto> crearEvento(@PathVariable("matchId") String matchId, @RequestBody CrearEventoRequest request) {
+        if (request.minuto() == null) {
+            throw new IllegalArgumentException("El minuto es obligatorio");
+        }
+
         EventoPartidoDto evento = gestor.registrarEvento(
-                matchId, request.eventType(), request.team(), request.annulsEventId(), request.points());
+                matchId, request.eventType(), request.team(), request.annulsEventId(),
+                request.minuto(), request.minutoExtra(), request.minutosAgregados());
         return ResponseEntity.status(HttpStatus.CREATED).body(evento);
     }
 
@@ -53,6 +59,11 @@ public class ControladorPartidos {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> manejarSolicitudInvalida(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MinutoInvalidoException.class)
+    public ResponseEntity<Map<String, String>> manejarMinutoInvalido(MinutoInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 }

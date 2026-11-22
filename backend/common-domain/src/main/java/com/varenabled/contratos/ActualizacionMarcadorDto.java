@@ -3,7 +3,9 @@ package com.varenabled.contratos;
 public record ActualizacionMarcadorDto(
         String matchId,
         int local,
-        int visitante
+        int visitante,
+        int minuto,
+        int minutoExtra
 ) {
 
     public ActualizacionMarcadorDto {

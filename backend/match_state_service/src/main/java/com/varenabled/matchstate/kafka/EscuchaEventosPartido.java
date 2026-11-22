@@ -29,13 +29,13 @@ public class EscuchaEventosPartido implements ConsumerSeekAware {
     @KafkaListener(topics = "match_events", groupId = "match-state-service")
     public void escuchar(EventoPartidoDto evento) {
         IdPartido idPartido = new IdPartido(evento.matchId());
+        int minuto = evento.minuto() == null ? 0 : evento.minuto();
+        int minutoExtra = evento.minutoExtra() == null ? 0 : evento.minutoExtra();
 
         switch (evento.eventType()) {
-            case "GOAL" -> servicio.procesarGol(idPartido, new IdEvento(evento.eventId()), mapearEquipo(evento.team()));
-            case "GOAL_ANNULLED" -> servicio.procesarGolAnulado(idPartido, new IdEvento(evento.annulsEventId()));
-            default -> {
-                // los demas eventos y deportes se incorporan en fases futuras
-            }
+            case "GOAL" -> servicio.procesarGol(idPartido, new IdEvento(evento.eventId()), mapearEquipo(evento.team()), minuto, minutoExtra);
+            case "GOAL_ANNULLED" -> servicio.procesarGolAnulado(idPartido, new IdEvento(evento.annulsEventId()), minuto, minutoExtra);
+            default -> servicio.actualizarMinuto(idPartido, minuto, minutoExtra);
         }
     }
 

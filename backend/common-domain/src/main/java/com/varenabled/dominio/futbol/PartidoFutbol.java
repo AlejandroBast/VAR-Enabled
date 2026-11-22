@@ -18,6 +18,8 @@ public class PartidoFutbol extends PartidoDeportivo {
 
     private final List<Gol> golesActivos = new ArrayList<>();
     private Marcador marcador = Marcador.enCero();
+    private int minutoActual = 0;
+    private int minutoExtraActual = 0;
 
     public PartidoFutbol(IdPartido id) {
         super(id);
@@ -36,8 +38,21 @@ public class PartidoFutbol extends PartidoDeportivo {
         marcador = marcador.restarGolDe(gol.equipo());
     }
 
+    public void actualizarMinuto(int minuto, int minutoExtra) {
+        this.minutoActual = minuto;
+        this.minutoExtraActual = minutoExtra;
+    }
+
     public Marcador obtenerMarcador() {
         return marcador;
+    }
+
+    public int obtenerMinutoActual() {
+        return minutoActual;
+    }
+
+    public int obtenerMinutoExtraActual() {
+        return minutoExtraActual;
     }
 
     private Optional<Gol> buscarGolActivo(IdEvento idEvento) {
