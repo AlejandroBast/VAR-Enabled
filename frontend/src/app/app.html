@@ -67,6 +67,8 @@
         <p class="aviso-revision" role="status">El VAR está revisando una jugada. Las apuestas de este partido están suspendidas.</p>
       }
 
+      <app-simulacion-cancha [marcador]="partido.marcador" [eventos]="partido.eventos" />
+
       <article class="panel">
         <h3>Partido</h3>
         @for (fila of lineaDeTiempo(); track $index) {
