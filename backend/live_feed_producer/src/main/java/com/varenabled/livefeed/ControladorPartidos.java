@@ -21,7 +21,7 @@ public class ControladorPartidos {
     }
 
     @GetMapping
-    public List<String> listarPartidos() {
+    public List<ResumenPartido> listarPartidos() {
         return gestor.listarPartidos();
     }
 
@@ -35,6 +35,11 @@ public class ControladorPartidos {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("matchId", request.matchId()));
     }
 
+    @PostMapping("/{matchId}/iniciar")
+    public EventoPartidoDto iniciarPartido(@PathVariable("matchId") String matchId) {
+        return gestor.iniciarPartido(matchId);
+    }
+
     @GetMapping("/{matchId}/eventos")
     public List<EventoPartidoDto> listarEventos(@PathVariable("matchId") String matchId) {
         return gestor.listarEventos(matchId);
@@ -42,13 +47,8 @@ public class ControladorPartidos {
 
     @PostMapping("/{matchId}/eventos")
     public ResponseEntity<EventoPartidoDto> crearEvento(@PathVariable("matchId") String matchId, @RequestBody CrearEventoRequest request) {
-        if (request.minuto() == null) {
-            throw new IllegalArgumentException("El minuto es obligatorio");
-        }
-
         EventoPartidoDto evento = gestor.registrarEvento(
-                matchId, request.eventType(), request.team(), request.annulsEventId(),
-                request.minuto(), request.minutoExtra(), request.minutosAgregados());
+                matchId, request.eventType(), request.team(), request.annulsEventId(), request.minutosAgregados());
         return ResponseEntity.status(HttpStatus.CREATED).body(evento);
     }
 
@@ -57,13 +57,13 @@ public class ControladorPartidos {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> manejarSolicitudInvalida(IllegalArgumentException ex) {
+    @ExceptionHandler({IllegalArgumentException.class, MinutoInvalidoException.class})
+    public ResponseEntity<Map<String, String>> manejarSolicitudInvalida(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(MinutoInvalidoException.class)
-    public ResponseEntity<Map<String, String>> manejarMinutoInvalido(MinutoInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> manejarEstadoDelPartido(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 }
