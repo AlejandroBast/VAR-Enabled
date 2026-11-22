@@ -36,9 +36,31 @@ Si se registra un gol y después el VAR lo anula, el sistema corrige el marcador
 
 Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL conserva el historial.
 
-## 4. Reglas de negocio
+## 4. Diagramas
 
-### 4.1. Partidos y marcadores
+### 4.1. Diagrama de flujo de eventos
+
+![Diagrama de flujo de eventos](docs/flujos.png)
+
+### 4.2. Diagrama de contexto
+
+![Diagrama de contexto](docs/contexto.png)
+
+### 4.3. Diagrama de componentes
+
+![Diagrama de componentes](docs/componentes.png)
+
+### 4.4. Diagrama de clases
+
+![Diagrama de clases](docs/clases.png)
+
+### 4.5. Diagrama entidad-relación
+
+![Diagrama entidad-relación](docs/entidad_relacion.png)
+
+## 5. Reglas de negocio
+
+### 5.1. Partidos y marcadores
 
 | Código | Regla |
 |---|---|
@@ -49,8 +71,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RN-05 | Un evento duplicado no modificará el marcador más de una vez. |
 | RN-06 | Los eventos del mismo partido se procesarán respetando su secuencia lógica. |
 
-<<<<<<< HEAD
-### 4.2. Revisión por video
+### 5.2. Revisión por video
 
 | Código | Regla |
 |---|---|
@@ -60,7 +81,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RN-10 | La anulación corregirá el marcador sin borrar el evento original. |
 | RN-11 | Toda corrección generará una nueva actualización y su registro de auditoría. |
 
-### 4.3. Mercados de apuestas
+### 5.3. Mercados de apuestas
 
 | Código | Regla |
 |---|---|
@@ -71,7 +92,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RN-16 | Un mercado cerrado o finalizado no podrá reabrirse por un comando tardío. |
 | RN-17 | Un comando repetido no producirá acciones duplicadas. |
 
-### 4.4. Auditoría y notificaciones
+### 5.4. Auditoría y notificaciones
 
 | Código | Regla |
 |---|---|
@@ -79,9 +100,9 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RN-19 | Las correcciones conservarán una referencia al evento que modifican. |
 | RN-20 | Los errores de procesamiento deberán registrarse para su revisión. |
 
-## 5. Requisitos funcionales
+## 6. Requisitos funcionales
 
-### 5.1. Eventos deportivos
+### 6.1. Eventos deportivos
 
 | Código | Requisito |
 |---|---|
@@ -91,7 +112,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RF-04 | El sistema deberá detectar eventos duplicados. |
 | RF-05 | El sistema deberá registrar los eventos inválidos para análisis. |
 
-### 5.2. Marcadores y revisiones
+### 6.2. Marcadores y revisiones
 
 | Código | Requisito |
 |---|---|
@@ -102,7 +123,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RF-10 | El sistema deberá enviar marcadores al dashboard mediante WebSocket. |
 | RF-11 | El sistema deberá emitir notificaciones de anotaciones, revisiones y anulaciones. |
 
-### 5.3. Suspensión y auditoría
+### 6.3. Suspensión y auditoría
 
 | Código | Requisito |
 |---|---|
@@ -114,7 +135,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RF-17 | El sistema deberá permitir consultar los eventos y revisiones de un partido. |
 | RF-18 | El sistema deberá gestionar errores de mensajería mediante reintentos controlados. |
 
-## 6. Requisitos no funcionales
+## 7. Requisitos no funcionales
 
 Los valores numéricos son **objetivos de prueba**, no resultados verificados.
 
@@ -133,7 +154,7 @@ Los valores numéricos son **objetivos de prueba**, no resultados verificados.
 | RNF-11 | Compatibilidad | El dashboard deberá visualizarse en computadores y dispositivos móviles. |
 | RNF-12 | Robustez | Los errores de entrega no deberán provocar correcciones o comandos duplicados. |
 
-## 7. Casos de uso
+## 8. Casos de uso
 
 | Caso | Descripción |
 |---|---|
@@ -144,32 +165,6 @@ Los valores numéricos son **objetivos de prueba**, no resultados verificados.
 | Consultar historial | Mostrar eventos, anulaciones y resultados. |
 
 **Ejemplo VAR:** llega `GOAL` y el marcador pasa de 0-0 a 1-0. Se suspende el mercado. Después llega `GOAL_ANNULLED`, que referencia el gol original; el marcador vuelve a 0-0 y se informa la corrección. La reapertura requiere una autorización posterior.
-
-## 8. Diagramas
-
-### 8.1. Diagrama de flujo de eventos (secuencia VAR)
-
-Muestra cómo se registra un gol, se comunica el resultado, se suspenden las apuestas y se procesa su anulación.
-
-![Diagrama de flujo de eventos](docs/images/diagrama-flujo-var.png)
-
-### 8.2. Diagrama de contexto (DFD nivel 0)
-
-Identifica los actores y sistemas externos que intercambian datos con VAR-Enabled.
-
-![Diagrama de contexto](docs/images/diagrama-contexto.png)
-
-### 8.3. Diagrama de clases UML
-
-Representa `Evento`, `PartidoService`, `Notificador` y las clases de fútbol, baloncesto y voleibol.
-
-![Diagrama de clases](docs/images/diagrama-clases-uml.png)
-
-### 8.4. Diagrama entidad-relación
-
-Describe las tablas de equipos, partidos, eventos, intervenciones VAR e historial de marcadores en PostgreSQL.
-
-![Diagrama entidad-relación](docs/images/diagrama-entidad-relacion.png)
 
 ## 9. Mensajería y eventos
 
@@ -216,14 +211,3 @@ mvn clean test
 docker compose up --build -d
 docker compose ps
 ```
-=======
-## Diagrama de contexto 
-![diagrma de contexto](/docs/contexto.png)
-
-## Diagrama de entidad relacion
-![diagrama de entidad relacion](/docs/entidad_relacion.png)
-
-## Diagrama de componentes
-![diagrama de componentes](/docs/componentes.png)
-
->>>>>>> e66cb69 (docs: actualiza el README)
