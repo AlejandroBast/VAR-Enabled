@@ -24,6 +24,7 @@
         <module>common-domain</module>
         <module>match_state_service</module>
         <module>live_feed_producer</module>
+        <module>notification_backend</module>
     </modules>
 
     <dependencyManagement>
