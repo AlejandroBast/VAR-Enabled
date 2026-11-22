@@ -27,7 +27,10 @@ public class ServicioArchivador {
                 Duration duracion = Duration.between(original.timestamp(), evento.timestamp());
                 registroRevisiones.guardar(new RevisionVarRegistrada(
                         evento.matchId(), evento.sport(), "VAR", evento.annulsEventId(), duracion));
-                marcadorFinal.restar(evento.matchId(), mapearEquipo(original.team()));
+                // Solo un gol anulado cambia el marcador final; una falta anulada no.
+                if ("GOAL".equals(original.eventType())) {
+                    marcadorFinal.restar(evento.matchId(), mapearEquipo(original.team()));
+                }
             });
         } else if ("GOAL".equals(evento.eventType())) {
             marcadorFinal.sumar(evento.matchId(), mapearEquipo(evento.team()));

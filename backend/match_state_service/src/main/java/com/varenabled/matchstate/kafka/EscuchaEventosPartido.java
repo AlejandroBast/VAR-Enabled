@@ -29,17 +29,40 @@ public class EscuchaEventosPartido implements ConsumerSeekAware {
     @KafkaListener(topics = "match_events", groupId = "match-state-service")
     public void escuchar(EventoPartidoDto evento) {
         IdPartido idPartido = new IdPartido(evento.matchId());
+        IdEvento idEvento = id(evento.eventId());
         int minuto = evento.minuto() == null ? 0 : evento.minuto();
         int minutoExtra = evento.minutoExtra() == null ? 0 : evento.minutoExtra();
 
         switch (evento.eventType()) {
-            case "GOAL" -> servicio.procesarGol(idPartido, new IdEvento(evento.eventId()), mapearEquipo(evento.team()), minuto, minutoExtra);
-            case "GOAL_ANNULLED" -> servicio.procesarGolAnulado(idPartido, new IdEvento(evento.annulsEventId()), minuto, minutoExtra);
+            case "MATCH_CREATED" -> servicio.procesarCreacion(idPartido, evento.homeTeam(), evento.awayTeam());
+            case "MATCH_STARTED" -> servicio.procesarInicio(idPartido, idEvento, minuto, minutoExtra);
+            case "HALF_TIME" -> servicio.procesarEntretiempo(idPartido, idEvento, minuto, minutoExtra);
+            case "SECOND_HALF_STARTED" -> servicio.procesarSegundoTiempo(idPartido, idEvento, minuto, minutoExtra);
+            case "MATCH_ENDED" -> servicio.procesarFinal(idPartido, idEvento, minuto, minutoExtra);
+            case "GOAL" -> servicio.procesarGol(idPartido, idEvento, mapearEquipo(evento.team()), minuto, minutoExtra);
+            case "GOAL_ANNULLED" -> servicio.procesarGolAnulado(idPartido, idEvento, id(evento.annulsEventId()), minuto, minutoExtra);
+            case "FOUL" -> servicio.procesarFalta(idPartido, idEvento, mapearEquipo(evento.team()), minuto, minutoExtra);
+            case "FOUL_ANNULLED" -> servicio.procesarFaltaAnulada(idPartido, idEvento, id(evento.annulsEventId()), minuto, minutoExtra);
+            case "YELLOW_CARD", "RED_CARD" ->
+                    servicio.procesarTarjeta(idPartido, idEvento, evento.eventType(), mapearEquipo(evento.team()), minuto, minutoExtra);
+            case "VAR_CHECK" -> servicio.procesarRevisionVar(idPartido, idEvento, id(evento.reviewsEventId()), minuto, minutoExtra);
+            case "MATCH_CONTINUES" -> servicio.procesarJugadaConfirmada(idPartido, idEvento, id(evento.reviewsEventId()), minuto, minutoExtra);
+            case "ADDED_TIME" -> servicio.procesarTiempoAnadido(idPartido, idEvento, minuto,
+                    evento.minutosAgregados() == null ? 0 : evento.minutosAgregados());
+            // CLOCK_TICK (el reloj avanzo), GOAL_CONFIRMED (un gol quedo firme) y cualquier otro:
+            // solo se mueve el minuto, sin alerta.
             default -> servicio.actualizarMinuto(idPartido, minuto, minutoExtra);
         }
     }
 
+    private IdEvento id(String valor) {
+        return valor == null ? null : new IdEvento(valor);
+    }
+
     private Equipo mapearEquipo(String team) {
+        if (team == null) {
+            return null;
+        }
         return "home".equals(team) ? Equipo.LOCAL : Equipo.VISITANTE;
     }
 }

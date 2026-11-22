@@ -10,3 +10,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 server:
   port: 8082
+partido:
+  # Cuantos segundos reales dura un minuto de partido. 60 = tiempo real (90 minutos de verdad).
+  # Para probar mas rapido se puede bajar con la variable de entorno PARTIDO_SEGUNDOS_POR_MINUTO.
+  segundos-por-minuto: ${PARTIDO_SEGUNDOS_POR_MINUTO:60}

@@ -14,6 +14,7 @@
     --texto-sutil: #94a3b8;
     --acento: #22c55e;
     --acento-hover: #4ade80;
+    --ambar: #f59e0b;
     --error: #ef4444;
   }
   * { box-sizing: border-box; }
@@ -58,14 +59,7 @@
     padding: 10px 16px;
   }
   button:hover { background: var(--acento-hover); }
-  button.secundario {
-    background: transparent;
-    border: 1px solid var(--borde);
-    color: var(--texto);
-    font-weight: 600;
-  }
-  button.secundario:hover { border-color: var(--acento); color: var(--acento); }
-  #apiBase { margin-bottom: 22px; }
+  button:disabled { cursor: not-allowed; opacity: .45; }
   .lista-partidos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .chip {
     border: 1px solid var(--borde);
@@ -75,13 +69,35 @@
     cursor: pointer;
   }
   .chip.activo { border-color: var(--acento); color: var(--acento); }
+  .chip small { color: var(--texto-sutil); margin-left: 6px; }
+  .reloj {
+    align-items: center;
+    background: #0f1626;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 12px 16px;
+  }
+  .reloj .minuto { font-size: 2rem; font-variant-numeric: tabular-nums; font-weight: 800; }
+  .reloj .estado { color: var(--texto-sutil); }
+  .reloj button { margin-top: 0; }
+  .aviso {
+    border: 1px solid var(--ambar);
+    border-radius: 10px;
+    color: #fcd34d;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+  }
+  .ayuda { color: var(--texto-sutil); font-size: .85rem; margin: 8px 0 0; }
   #log {
     font-family: ui-monospace, Consolas, monospace;
     font-size: .82rem;
     max-height: 320px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column-reverse;
   }
   #log div { padding: 6px 0; border-bottom: 1px solid var(--borde); }
   #log .ok { color: var(--acento); }
@@ -92,7 +108,7 @@
 <body>
 <main>
   <h1>VAR-Enabled · EventMaker</h1>
-  <p class="subtitulo">Crea partidos y dispara eventos a mano contra la API de <code>live_feed_producer</code>, para comprobar el flujo del VAR.</p>
+  <p class="subtitulo">Crea partidos, inícialos y dispara eventos en vivo contra la API de <code>live_feed_producer</code>. El minuto lo pone el reloj del partido, no se escribe a mano.</p>
 
   <section>
     <label for="apiBase">URL de la API</label>
@@ -104,63 +120,60 @@
     <div class="fila">
       <div>
         <label for="nuevoMatchId">ID del partido</label>
-        <input id="nuevoMatchId" placeholder="ej. 123">
+        <input id="nuevoMatchId" placeholder="ej. final-copa">
+      </div>
+      <div>
+        <label for="equipoLocal">Equipo local</label>
+        <input id="equipoLocal" placeholder="ej. Nacional">
+      </div>
+      <div>
+        <label for="equipoVisitante">Equipo visitante</label>
+        <input id="equipoVisitante" placeholder="ej. América">
       </div>
     </div>
     <button id="btnCrearPartido">Crear partido</button>
 
     <label style="margin-top:18px">Partidos creados (clic para seleccionar)</label>
     <div id="listaPartidos" class="lista-partidos"></div>
-    <button id="btnRefrescarPartidos" class="secundario">Actualizar lista</button>
+
+    <div class="reloj">
+      <div>
+        <div class="minuto" id="relojMinuto">--</div>
+        <div class="estado" id="relojEstado">Seleccioná un partido</div>
+      </div>
+      <div>
+        <button id="btnIniciarPartido" class="oculto">Iniciar partido</button>
+        <button id="btnSegundoTiempo" class="oculto">Iniciar segundo tiempo</button>
+      </div>
+    </div>
   </section>
 
   <section>
     <h2>2. Disparar evento</h2>
+    <p id="avisoRevision" class="aviso oculto"></p>
     <div class="fila">
-      <div>
-        <label for="matchIdEvento">Partido</label>
-        <input id="matchIdEvento" placeholder="seleccioná uno arriba o escribí el ID">
-      </div>
       <div>
         <label for="tipoEvento">Tipo de evento</label>
-        <select id="tipoEvento">
-          <option value="GOAL">GOAL (gol)</option>
-          <option value="FOUL">FOUL (falta)</option>
-          <option value="VAR_CHECK">VAR_CHECK (revisión)</option>
-          <option value="GOAL_ANNULLED">GOAL_ANNULLED (gol anulado)</option>
-          <option value="MATCH_CONTINUES">MATCH_CONTINUES (sigue el juego)</option>
-          <option value="ADDED_TIME">ADDED_TIME (tiempo añadido)</option>
-        </select>
+        <select id="tipoEvento"></select>
       </div>
-    </div>
-    <div class="fila">
-      <div>
-        <label for="minuto">Minuto (1-90)</label>
-        <input id="minuto" type="number" min="1" max="90" value="1">
-      </div>
-      <div id="campoMinutoExtra">
-        <label for="minutoExtra">Minuto extra (solo en el 45 o el 90)</label>
-        <input id="minutoExtra" type="number" min="0" max="10" value="0">
-      </div>
-      <div id="campoMinutosAgregados" class="oculto">
-        <label for="minutosAgregados">Minutos a agregar (1-10)</label>
-        <input id="minutosAgregados" type="number" min="1" max="10" value="1">
-      </div>
-    </div>
-    <div class="fila">
       <div id="campoEquipo">
         <label for="equipo">Equipo</label>
         <select id="equipo">
-          <option value="home">Local (home)</option>
-          <option value="away">Visitante (away)</option>
+          <option value="home">Local</option>
+          <option value="away">Visitante</option>
         </select>
       </div>
-      <div id="campoAnula" class="oculto">
-        <label for="anulaEventId">Gol que anula</label>
-        <select id="anulaEventId"></select>
+      <div id="campoRevisar" class="oculto">
+        <label for="jugadaARevisar">Jugada a revisar (últimos 2 minutos)</label>
+        <select id="jugadaARevisar"></select>
+      </div>
+      <div id="campoMinutosAgregados" class="oculto">
+        <label for="minutosAgregados">Minutos a agregar (1-10)</label>
+        <input id="minutosAgregados" type="number" min="1" max="10" value="3">
       </div>
     </div>
-    <button id="btnEnviarEvento">Enviar evento</button>
+    <p id="ayudaEvento" class="ayuda"></p>
+    <button id="btnEnviarEvento" disabled>Enviar evento</button>
   </section>
 
   <section>
@@ -172,14 +185,41 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let partidoSeleccionado = null;
+let partidosConocidos = [];
+let eventosDelPartido = [];
+let estadoAnterior = null;
+
+const NOMBRE_ESTADO = {
+  POR_JUGAR: 'Por jugar', EN_JUEGO: 'En juego', EN_REVISION: 'Revisión VAR',
+  ENTRETIEMPO: 'Entretiempo', FINALIZADO: 'Finalizado',
+};
+
+// Que se puede mandar en cada momento del partido.
+const EVENTOS_EN_JUEGO = [
+  ['GOAL', 'Gol'],
+  ['FOUL', 'Falta'],
+  ['YELLOW_CARD', 'Tarjeta amarilla'],
+  ['RED_CARD', 'Tarjeta roja'],
+  ['VAR_CHECK', 'Revisión VAR (gol o falta de los últimos 2 minutos)'],
+  ['ADDED_TIME', 'Tiempo añadido (solo en el minuto 45 o 90)'],
+];
+const AYUDA = {
+  GOAL: 'El gol suma apenas se manda. Se puede revisar durante 2 minutos; si nadie lo revisa, queda firme solo.',
+  FOUL: 'La falta se cuenta para el equipo. Se puede revisar durante 2 minutos.',
+  YELLOW_CARD: 'Las tarjetas no se revisan por VAR.',
+  RED_CARD: 'Las tarjetas no se revisan por VAR.',
+  VAR_CHECK: 'Mientras el VAR revisa, el juego queda parado y las apuestas suspendidas.',
+  ADDED_TIME: 'Solo se puede anunciar durante el minuto 45 o el 90.',
+  MATCH_CONTINUES: 'El VAR mantiene la jugada: el partido sigue.',
+  ANULAR: 'El VAR anula la jugada que está en revisión.',
+};
 
 function apiBase() { return $('apiBase').value.replace(/\/$/, ''); }
 
 function registrar(mensaje, tipo) {
   const linea = document.createElement('div');
   linea.className = tipo || '';
-  const hora = new Date().toLocaleTimeString();
-  linea.textContent = `[${hora}] ${mensaje}`;
+  linea.textContent = `[${new Date().toLocaleTimeString()}] ${mensaje}`;
   $('log').prepend(linea);
 }
 
@@ -196,117 +236,211 @@ async function pedir(path, opciones) {
   return cuerpo;
 }
 
-async function refrescarPartidos() {
+function textoMinuto(minuto, extra) {
+  if (minuto == null) return '--';
+  return extra ? `${minuto}+${extra}'` : `${minuto}'`;
+}
+
+function partidoActual() {
+  return partidosConocidos.find((p) => p.match_id === partidoSeleccionado);
+}
+
+function nombreEquipo(partido, team) {
+  if (team === 'home') return partido.home_team || 'Local';
+  if (team === 'away') return partido.away_team || 'Visitante';
+  return '';
+}
+
+function describirJugada(eventId) {
+  const evento = eventosDelPartido.find((e) => e.event_id === eventId);
+  const partido = partidoActual();
+  if (!evento || !partido) return eventId;
+  const que = evento.event_type === 'GOAL' ? 'Gol' : 'Falta';
+  return `${que} de ${nombreEquipo(partido, evento.team)} al ${textoMinuto(evento.minuto, evento.minuto_extra)}`;
+}
+
+async function refrescar() {
   try {
-    const partidos = await pedir('/api/partidos');
-    const contenedor = $('listaPartidos');
-    contenedor.innerHTML = '';
-    partidos.forEach((matchId) => {
-      const chip = document.createElement('div');
-      chip.className = 'chip' + (matchId === partidoSeleccionado ? ' activo' : '');
-      chip.textContent = matchId;
-      chip.onclick = () => seleccionarPartido(matchId);
-      contenedor.appendChild(chip);
-    });
+    partidosConocidos = await pedir('/api/partidos');
+    if (partidoSeleccionado) {
+      eventosDelPartido = await pedir(`/api/partidos/${encodeURIComponent(partidoSeleccionado)}/eventos`);
+    }
+    pintarPartidos();
+    pintarReloj();
+    pintarFormulario();
   } catch (error) {
-    registrar('No se pudo listar los partidos: ' + error.message, 'err');
+    $('relojEstado').textContent = 'No se pudo conectar con la API: ' + error.message;
   }
 }
 
-async function seleccionarPartido(matchId) {
-  partidoSeleccionado = matchId;
-  $('matchIdEvento').value = matchId;
-  await refrescarPartidos();
-  await refrescarGolesAnulables();
+function pintarPartidos() {
+  const contenedor = $('listaPartidos');
+  contenedor.innerHTML = '';
+  partidosConocidos.forEach((partido) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (partido.match_id === partidoSeleccionado ? ' activo' : '');
+    chip.textContent = partido.home_team && partido.away_team
+      ? `${partido.home_team} vs ${partido.away_team}` : partido.match_id;
+    const detalle = document.createElement('small');
+    detalle.textContent = partido.estado === 'EN_JUEGO'
+      ? textoMinuto(partido.minuto, partido.minuto_extra) : NOMBRE_ESTADO[partido.estado];
+    chip.appendChild(detalle);
+    chip.onclick = () => { partidoSeleccionado = partido.match_id; estadoAnterior = null; refrescar(); };
+    contenedor.appendChild(chip);
+  });
 }
 
-async function refrescarGolesAnulables() {
-  const matchId = $('matchIdEvento').value.trim();
-  const select = $('anulaEventId');
-  select.innerHTML = '';
-  if (!matchId) return;
-  try {
-    const eventos = await pedir(`/api/partidos/${encodeURIComponent(matchId)}/eventos`);
-    const golesVigentes = [];
-    eventos.forEach((evento) => {
-      if (evento.event_type === 'GOAL') golesVigentes.push(evento);
-      if (evento.event_type === 'GOAL_ANNULLED') {
-        const indice = golesVigentes.findIndex((g) => g.event_id === evento.annuls_event_id);
-        if (indice !== -1) golesVigentes.splice(indice, 1);
-      }
-    });
-    golesVigentes.forEach((gol) => {
+function pintarReloj() {
+  const partido = partidoActual();
+  $('btnIniciarPartido').classList.toggle('oculto', !partido || partido.estado !== 'POR_JUGAR');
+  $('btnSegundoTiempo').classList.toggle('oculto', !partido || partido.estado !== 'ENTRETIEMPO');
+  if (!partido) {
+    $('relojMinuto').textContent = '--';
+    $('relojEstado').textContent = 'Seleccioná un partido';
+    return;
+  }
+  $('relojMinuto').textContent = textoMinuto(partido.minuto, partido.minuto_extra);
+  const nombre = partido.home_team && partido.away_team
+    ? `${partido.home_team} vs ${partido.away_team}` : `Partido ${partido.match_id}`;
+  $('relojEstado').textContent = `${nombre} · ${NOMBRE_ESTADO[partido.estado]}`;
+}
+
+function pintarFormulario() {
+  const partido = partidoActual();
+  const estado = partido ? partido.estado : null;
+
+  // Las opciones del tipo de evento solo cambian cuando cambia el estado, para no perder la seleccion.
+  if (estado !== estadoAnterior) {
+    estadoAnterior = estado;
+    const select = $('tipoEvento');
+    select.innerHTML = '';
+    let opciones = [];
+    if (estado === 'EN_JUEGO') opciones = EVENTOS_EN_JUEGO;
+    if (estado === 'EN_REVISION') opciones = [['MATCH_CONTINUES', 'Se mantiene la jugada (MATCH_CONTINUES)'], ['ANULAR', 'Anular la jugada']];
+    opciones.forEach(([valor, texto]) => {
       const opcion = document.createElement('option');
-      opcion.value = gol.event_id;
-      opcion.textContent = `${gol.event_id} (${gol.team})`;
+      opcion.value = valor;
+      opcion.textContent = texto;
       select.appendChild(opcion);
     });
-  } catch (error) {
-    registrar('No se pudo cargar el historial del partido: ' + error.message, 'err');
+    $('equipo').options[0].textContent = partido ? nombreEquipo(partido, 'home') + ' (local)' : 'Local';
+    $('equipo').options[1].textContent = partido ? nombreEquipo(partido, 'away') + ' (visitante)' : 'Visitante';
   }
+
+  const aviso = $('avisoRevision');
+  if (estado === 'EN_REVISION') {
+    aviso.textContent = `El VAR está revisando: ${describirJugada(partido.revision_abierta)}. El juego está parado.`;
+  } else if (estado && estado !== 'EN_JUEGO') {
+    aviso.textContent = {
+      POR_JUGAR: 'El partido todavía no empezó: inicialo arriba.',
+      ENTRETIEMPO: 'Entretiempo: iniciá el segundo tiempo arriba para seguir.',
+      FINALIZADO: 'El partido terminó.',
+    }[estado];
+  }
+  aviso.classList.toggle('oculto', !estado || estado === 'EN_JUEGO');
+
+  // Jugadas que todavia se pueden revisar.
+  const revisar = $('jugadaARevisar');
+  const elegida = revisar.value;
+  revisar.innerHTML = '';
+  (partido ? partido.revisables : []).forEach((id) => {
+    const opcion = document.createElement('option');
+    opcion.value = id;
+    opcion.textContent = describirJugada(id);
+    revisar.appendChild(opcion);
+  });
+  if (elegida) revisar.value = elegida;
+
+  actualizarCamposSegunTipo();
 }
 
 function actualizarCamposSegunTipo() {
   const tipo = $('tipoEvento').value;
-  $('campoEquipo').classList.toggle('oculto', tipo !== 'GOAL');
-  $('campoAnula').classList.toggle('oculto', tipo !== 'GOAL_ANNULLED');
-  $('campoMinutoExtra').classList.toggle('oculto', tipo === 'ADDED_TIME');
+  const partido = partidoActual();
+  $('campoEquipo').classList.toggle('oculto', !['GOAL', 'FOUL', 'YELLOW_CARD', 'RED_CARD'].includes(tipo));
+  $('campoRevisar').classList.toggle('oculto', tipo !== 'VAR_CHECK');
   $('campoMinutosAgregados').classList.toggle('oculto', tipo !== 'ADDED_TIME');
-  if (tipo === 'GOAL_ANNULLED') refrescarGolesAnulables();
+  $('ayudaEvento').textContent = AYUDA[tipo] || '';
+
+  let sePuede = !!partido && ['EN_JUEGO', 'EN_REVISION'].includes(partido.estado) && !!tipo;
+  if (tipo === 'VAR_CHECK' && $('jugadaARevisar').options.length === 0) {
+    sePuede = false;
+    $('ayudaEvento').textContent = 'No hay goles ni faltas de los últimos 2 minutos para revisar.';
+  }
+  $('btnEnviarEvento').disabled = !sePuede;
 }
 
 $('btnCrearPartido').onclick = async () => {
   const matchId = $('nuevoMatchId').value.trim();
   if (!matchId) { registrar('Escribí un ID de partido primero', 'err'); return; }
   try {
-    await pedir('/api/partidos', { method: 'POST', body: JSON.stringify({ match_id: matchId }) });
-    registrar(`Partido ${matchId} creado`, 'ok');
+    await pedir('/api/partidos', {
+      method: 'POST',
+      body: JSON.stringify({
+        match_id: matchId,
+        home_team: $('equipoLocal').value.trim() || null,
+        away_team: $('equipoVisitante').value.trim() || null,
+      }),
+    });
+    registrar(`Partido ${matchId} creado (por jugar)`, 'ok');
     $('nuevoMatchId').value = '';
-    await seleccionarPartido(matchId);
+    $('equipoLocal').value = '';
+    $('equipoVisitante').value = '';
+    partidoSeleccionado = matchId;
+    estadoAnterior = null;
+    await refrescar();
   } catch (error) {
     registrar('No se pudo crear el partido: ' + error.message, 'err');
   }
 };
 
-$('btnRefrescarPartidos').onclick = refrescarPartidos;
+async function accionDelReloj(ruta, mensaje) {
+  if (!partidoSeleccionado) return;
+  try {
+    await pedir(`/api/partidos/${encodeURIComponent(partidoSeleccionado)}/${ruta}`, { method: 'POST' });
+    registrar(mensaje, 'ok');
+    await refrescar();
+  } catch (error) {
+    registrar('No se pudo: ' + error.message, 'err');
+  }
+}
+
+$('btnIniciarPartido').onclick = () => accionDelReloj('iniciar', `Partido ${partidoSeleccionado} iniciado: el reloj empieza a correr`);
+$('btnSegundoTiempo').onclick = () => accionDelReloj('segundo-tiempo', `Comienza el segundo tiempo de ${partidoSeleccionado}`);
 $('tipoEvento').onchange = actualizarCamposSegunTipo;
-$('matchIdEvento').onchange = refrescarGolesAnulables;
+$('jugadaARevisar').onchange = actualizarCamposSegunTipo;
 
 $('btnEnviarEvento').onclick = async () => {
-  const matchId = $('matchIdEvento').value.trim();
-  const tipo = $('tipoEvento').value;
-  if (!matchId) { registrar('Indicá a qué partido va el evento', 'err'); return; }
+  const partido = partidoActual();
+  if (!partido) return;
+  let tipo = $('tipoEvento').value;
 
-  const minuto = Number($('minuto').value);
-  if (!minuto) { registrar('Indicá el minuto del evento', 'err'); return; }
-
-  const cuerpo = { event_type: tipo, minuto };
-  if (tipo === 'GOAL') cuerpo.team = $('equipo').value;
-  if (tipo === 'GOAL_ANNULLED') {
-    if (!$('anulaEventId').value) { registrar('No hay ningún gol vigente para anular en ese partido', 'err'); return; }
-    cuerpo.annuls_event_id = $('anulaEventId').value;
+  const cuerpo = {};
+  if (['GOAL', 'FOUL', 'YELLOW_CARD', 'RED_CARD'].includes(tipo)) cuerpo.team = $('equipo').value;
+  if (tipo === 'VAR_CHECK') cuerpo.reviews_event_id = $('jugadaARevisar').value;
+  if (tipo === 'ADDED_TIME') cuerpo.minutos_agregados = Number($('minutosAgregados').value);
+  if (tipo === 'ANULAR') {
+    // Se anula la jugada que esta en revision: gol o falta segun lo que sea.
+    const enRevision = eventosDelPartido.find((e) => e.event_id === partido.revision_abierta);
+    tipo = enRevision && enRevision.event_type === 'FOUL' ? 'FOUL_ANNULLED' : 'GOAL_ANNULLED';
   }
-  if (tipo === 'ADDED_TIME') {
-    cuerpo.minutos_agregados = Number($('minutosAgregados').value);
-  } else {
-    cuerpo.minuto_extra = Number($('minutoExtra').value) || 0;
-  }
+  cuerpo.event_type = tipo;
 
   try {
-    const evento = await pedir(`/api/partidos/${encodeURIComponent(matchId)}/eventos`, {
+    const evento = await pedir(`/api/partidos/${encodeURIComponent(partido.match_id)}/eventos`, {
       method: 'POST',
       body: JSON.stringify(cuerpo),
     });
-    const minutoTexto = evento.minuto_extra ? `${evento.minuto}+${evento.minuto_extra}` : `${evento.minuto}`;
-    registrar(`${evento.event_type} enviado a ${matchId} en el minuto ${minutoTexto} (event_id=${evento.event_id})`, 'ok');
-    await refrescarGolesAnulables();
+    registrar(`${evento.event_type} enviado en el minuto ${textoMinuto(evento.minuto, evento.minuto_extra)} (event_id=${evento.event_id})`, 'ok');
+    await refrescar();
   } catch (error) {
     registrar('No se pudo enviar el evento: ' + error.message, 'err');
   }
 };
 
-actualizarCamposSegunTipo();
-refrescarPartidos();
+refrescar();
+// El reloj corre en el servidor: se consulta cada segundo para ver el minuto en vivo.
+setInterval(refrescar, 1000);
 </script>
 </body>
 </html>
