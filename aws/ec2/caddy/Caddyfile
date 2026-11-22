@@ -1,0 +1,49 @@
+# Puerta de entrada de VAR-Enabled en la EC2.
+# Caddy corre en su propio contenedor, fuera del docker-compose del proyecto, con
+# --network host. Saca y renueva solo el certificado HTTPS (Let's Encrypt).
+#
+# Recibe estas variables desde /etc/var-enabled/caddy.env (las escribe aws/ec2/arranque.sh):
+#   SITIOS          con dominio: "<sub>.duckdns.org, http://<ip-fija>"    sin dominio: ":80"
+#   SITIO_RABBITMQ  con dominio: "rabbit.<sub>.duckdns.org"               sin dominio: "http://rabbit.localhost"
+#   HASH_OPERADOR   hash bcrypt de la clave del usuario "operador"
+
+{$SITIOS} {
+	# EventMaker y la API de eventos cambian los partidos: piden usuario y clave.
+	# El marcador y su WebSocket son publicos porque solo se leen.
+	@operador path /eventmaker /eventmaker/* /api/*
+	basic_auth @operador {
+		operador {$HASH_OPERADOR}
+	}
+
+	redir /eventmaker /eventmaker/
+
+	# WebSocket del marcador en vivo (dashboard_backend)
+	handle /marcador {
+		reverse_proxy 127.0.0.1:8081
+	}
+
+	# API para crear partidos y disparar eventos (live_feed_producer)
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	# EventMaker, el HTML para probar el flujo del VAR a mano
+	handle_path /eventmaker/* {
+		root * /srv/eventmaker
+		encode zstd gzip
+		file_server
+	}
+
+	# Frontend de Angular (build de produccion)
+	handle {
+		root * /srv/frontend
+		encode zstd gzip
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Panel de RabbitMQ: se entra con el usuario y la clave de RabbitMQ
+{$SITIO_RABBITMQ} {
+	reverse_proxy 127.0.0.1:15672
+}
