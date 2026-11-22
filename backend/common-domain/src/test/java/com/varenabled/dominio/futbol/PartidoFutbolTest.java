@@ -118,4 +118,13 @@ class PartidoFutbolTest {
 
         assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
     }
+
+    @Test
+    void finalizarDejaElPartidoTerminado() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.finalizar();
+
+        assertEquals(EstadoPartido.FINALIZADO, partido.obtenerEstado());
+    }
 }

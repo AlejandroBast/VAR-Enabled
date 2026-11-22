@@ -48,6 +48,10 @@ public class PartidoFutbol extends PartidoDeportivo {
         estado = EstadoPartido.EN_JUEGO;
     }
 
+    public void finalizar() {
+        estado = EstadoPartido.FINALIZADO;
+    }
+
     public void actualizarMinuto(int minuto, int minutoExtra) {
         this.minutoActual = minuto;
         this.minutoExtraActual = minutoExtra;

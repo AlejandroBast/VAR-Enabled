@@ -22,6 +22,25 @@ public class ServicioMarcadorFutbol {
         this.publicadorAlertas = publicadorAlertas;
     }
 
+    public void procesarInicio(IdPartido idPartido, IdEvento idEvento, int minuto, int minutoExtra) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.actualizarMinuto(minuto, minutoExtra);
+
+        guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "MATCH_STARTED", null, null,
+                minuto, minutoExtra, "¡Comienza el partido!"));
+    }
+
+    public void procesarFinal(IdPartido idPartido, IdEvento idEvento, int minuto, int minutoExtra) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.finalizar();
+        partido.actualizarMinuto(minuto, minutoExtra);
+
+        guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "MATCH_ENDED", null, null,
+                minuto, minutoExtra, "Final del partido"));
+    }
+
     public void procesarGol(IdPartido idPartido, IdEvento idEvento, Equipo equipo, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
 

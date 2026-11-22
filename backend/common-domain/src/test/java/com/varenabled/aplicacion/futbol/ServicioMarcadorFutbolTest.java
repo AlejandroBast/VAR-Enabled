@@ -190,4 +190,32 @@ class ServicioMarcadorFutbolTest {
         verify(publicadorAlertas).publicarAlerta(captor.capture());
         return captor.getValue();
     }
+
+    @Test
+    void procesarInicioPublicaElPartidoEnCeroEnElMinutoUnoYAvisa() {
+        // Arrange
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
+
+        // Act
+        servicio.procesarInicio(idPartido, idEvento, 1, 0);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
+        assertEquals("MATCH_STARTED", alertaPublicada().tipoEvento());
+    }
+
+    @Test
+    void procesarFinalDejaElPartidoFinalizadoYAvisa() {
+        // Arrange
+        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
+        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
+
+        // Act
+        servicio.procesarFinal(idPartido, idAnulacion, 90, 3);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 90, 3, EstadoPartido.FINALIZADO);
+        assertEquals("MATCH_ENDED", alertaPublicada().tipoEvento());
+    }
 }
