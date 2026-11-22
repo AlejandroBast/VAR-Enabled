@@ -37,4 +37,19 @@ class ReglasSuspensionApuestasTest {
     void unEventoQueNoAfectaLasApuestasNoHaceNada() {
         assertEquals(Optional.empty(), ReglasSuspensionApuestas.evaluar("MATCH_STARTED"));
     }
+
+    @Test
+    void elFinalDelPartidoCierraLasApuestas() {
+        assertEquals(Optional.of(ComandoApuesta.SUSPENDER), ReglasSuspensionApuestas.evaluar("MATCH_ENDED"));
+    }
+
+    @Test
+    void unGolQueQuedaFirmeReabreLasApuestas() {
+        assertEquals(Optional.of(ComandoApuesta.REANUDAR), ReglasSuspensionApuestas.evaluar("GOAL_CONFIRMED"));
+    }
+
+    @Test
+    void unaFaltaAnuladaPorElVarReabreLasApuestas() {
+        assertEquals(Optional.of(ComandoApuesta.REANUDAR), ReglasSuspensionApuestas.evaluar("FOUL_ANNULLED"));
+    }
 }

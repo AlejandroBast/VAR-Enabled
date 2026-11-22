@@ -5,9 +5,13 @@ import java.util.Set;
 
 public final class ReglasSuspensionApuestas {
 
-    private static final Set<String> EVENTOS_QUE_SUSPENDEN = Set.of("GOAL", "VAR_CHECK");
+    // Un gol, una revision VAR o el final del partido cierran las apuestas.
+    private static final Set<String> EVENTOS_QUE_SUSPENDEN = Set.of("GOAL", "VAR_CHECK", "MATCH_ENDED");
 
-    private static final Set<String> EVENTOS_QUE_REANUDAN = Set.of("GOAL_ANNULLED", "MATCH_CONTINUES");
+    // Se reabren cuando la jugada queda resuelta: el VAR la anula o la confirma, o el gol queda firme
+    // porque pasaron sus 2 minutos sin revision.
+    private static final Set<String> EVENTOS_QUE_REANUDAN = Set.of(
+            "GOAL_ANNULLED", "FOUL_ANNULLED", "MATCH_CONTINUES", "GOAL_CONFIRMED");
 
     private ReglasSuspensionApuestas() {
     }
