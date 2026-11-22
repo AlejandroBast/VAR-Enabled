@@ -7,6 +7,7 @@ import com.varenabled.dominio.EventoInexistenteException;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
+import com.varenabled.dominio.futbol.EstadoPartido;
 import com.varenabled.dominio.futbol.PartidoFutbol;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +54,7 @@ class ServicioMarcadorFutbolTest {
 
         // Assert
         verify(repositorio).guardar(any(PartidoFutbol.class));
-        verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)), eq(23), eq(0));
+        verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)), eq(23), eq(0), eq(EstadoPartido.EN_JUEGO));
         verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
@@ -69,7 +70,7 @@ class ServicioMarcadorFutbolTest {
 
         // Assert
         verify(repositorio).guardar(partidoExistente);
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 25, 0);
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 25, 0, EstadoPartido.EN_JUEGO);
         verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
@@ -84,7 +85,7 @@ class ServicioMarcadorFutbolTest {
                 () -> servicio.procesarGolAnulado(idPartido, idEvento, 25, 0));
 
         verify(repositorio, never()).guardar(any());
-        verify(publicadorMarcador, never()).publicarMarcador(any(), any(), anyInt(), anyInt());
+        verify(publicadorMarcador, never()).publicarMarcador(any(), any(), anyInt(), anyInt(), any());
         verify(publicadorAlertas, never()).publicarAlerta(any(), any(), anyString());
     }
 
@@ -98,7 +99,7 @@ class ServicioMarcadorFutbolTest {
 
         // Assert
         verify(repositorio).guardar(any(PartidoFutbol.class));
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0);
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
         verify(publicadorAlertas, never()).publicarAlerta(any(), any(), anyString());
     }
 
@@ -113,6 +114,32 @@ class ServicioMarcadorFutbolTest {
         servicio.actualizarMinuto(idPartido, 46, 0);
 
         // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 46, 0);
+        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 46, 0, EstadoPartido.EN_JUEGO);
+    }
+
+    @Test
+    void procesarRevisionVarPublicaElMarcadorEnRevision() {
+        // Arrange
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
+
+        // Act
+        servicio.procesarRevisionVar(idPartido, 30, 0);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 30, 0, EstadoPartido.EN_REVISION);
+    }
+
+    @Test
+    void procesarJugadaConfirmadaVuelveAPublicarElMarcadorEnJuego() {
+        // Arrange
+        PartidoFutbol partidoEnRevision = new PartidoFutbol(idPartido);
+        partidoEnRevision.iniciarRevisionVar();
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoEnRevision));
+
+        // Act
+        servicio.procesarJugadaConfirmada(idPartido, 31, 0);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 31, 0, EstadoPartido.EN_JUEGO);
     }
 }

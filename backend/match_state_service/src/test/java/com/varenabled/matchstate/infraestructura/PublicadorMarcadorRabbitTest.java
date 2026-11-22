@@ -3,6 +3,7 @@ package com.varenabled.matchstate.infraestructura;
 import com.varenabled.contratos.ActualizacionMarcadorDto;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
+import com.varenabled.dominio.futbol.EstadoPartido;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,11 +24,11 @@ class PublicadorMarcadorRabbitTest {
 
     @Test
     void publicaElMarcadorEnElExchangeConLaRoutingKeyDelPartido() {
-        adaptador.publicarMarcador(new IdPartido("123"), new Marcador(1, 0), 23, 0);
+        adaptador.publicarMarcador(new IdPartido("123"), new Marcador(1, 0), 23, 0, EstadoPartido.EN_REVISION);
 
         verify(rabbitTemplate).convertAndSend(
                 ConfiguracionRabbitMQ.EXCHANGE_MARCADOR,
                 "score.match_123",
-                new ActualizacionMarcadorDto("123", 1, 0, 23, 0));
+                new ActualizacionMarcadorDto("123", 1, 0, 23, 0, "EN_REVISION"));
     }
 }

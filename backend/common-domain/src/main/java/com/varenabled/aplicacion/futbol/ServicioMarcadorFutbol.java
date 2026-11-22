@@ -43,6 +43,26 @@ public class ServicioMarcadorFutbol {
         publicadorAlertas.publicarAlerta(idPartido, idEventoAnulado, "¡GOL ANULADO POR EL VAR!");
     }
 
+    public void procesarRevisionVar(IdPartido idPartido, int minuto, int minutoExtra) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.iniciarRevisionVar();
+        partido.actualizarMinuto(minuto, minutoExtra);
+
+        repositorio.guardar(partido);
+        publicarMarcador(idPartido, partido);
+    }
+
+    public void procesarJugadaConfirmada(IdPartido idPartido, int minuto, int minutoExtra) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.confirmarJugadaPorVar();
+        partido.actualizarMinuto(minuto, minutoExtra);
+
+        repositorio.guardar(partido);
+        publicarMarcador(idPartido, partido);
+    }
+
     public void actualizarMinuto(IdPartido idPartido, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
 
@@ -54,7 +74,8 @@ public class ServicioMarcadorFutbol {
 
     private void publicarMarcador(IdPartido idPartido, PartidoFutbol partido) {
         publicadorMarcador.publicarMarcador(
-                idPartido, partido.obtenerMarcador(), partido.obtenerMinutoActual(), partido.obtenerMinutoExtraActual());
+                idPartido, partido.obtenerMarcador(), partido.obtenerMinutoActual(), partido.obtenerMinutoExtraActual(),
+                partido.obtenerEstado());
     }
 
     private PartidoFutbol obtenerOCrear(IdPartido idPartido) {

@@ -35,6 +35,8 @@ public class EscuchaEventosPartido implements ConsumerSeekAware {
         switch (evento.eventType()) {
             case "GOAL" -> servicio.procesarGol(idPartido, new IdEvento(evento.eventId()), mapearEquipo(evento.team()), minuto, minutoExtra);
             case "GOAL_ANNULLED" -> servicio.procesarGolAnulado(idPartido, new IdEvento(evento.annulsEventId()), minuto, minutoExtra);
+            case "VAR_CHECK" -> servicio.procesarRevisionVar(idPartido, minuto, minutoExtra);
+            case "MATCH_CONTINUES" -> servicio.procesarJugadaConfirmada(idPartido, minuto, minutoExtra);
             default -> servicio.actualizarMinuto(idPartido, minuto, minutoExtra);
         }
     }

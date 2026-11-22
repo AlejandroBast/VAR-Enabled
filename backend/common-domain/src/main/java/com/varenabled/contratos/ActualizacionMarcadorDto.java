@@ -5,7 +5,8 @@ public record ActualizacionMarcadorDto(
         int local,
         int visitante,
         int minuto,
-        int minutoExtra
+        int minutoExtra,
+        String estado
 ) {
 
     public ActualizacionMarcadorDto {
