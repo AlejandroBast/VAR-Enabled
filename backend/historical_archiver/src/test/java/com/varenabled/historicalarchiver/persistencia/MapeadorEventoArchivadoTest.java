@@ -12,7 +12,7 @@ class MapeadorEventoArchivadoTest {
     @Test
     void convierteElDtoAEntidadYDeVueltaSinPerderDatos() {
         Instant ahora = Instant.now();
-        EventoPartidoDto original = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, ahora);
+        EventoPartidoDto original = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 23, 0, null, ahora);
 
         MatchEventLogEntity entidad = MapeadorEventoArchivado.aEntidad(original);
         EventoPartidoDto reconstruido = MapeadorEventoArchivado.aDto(entidad);

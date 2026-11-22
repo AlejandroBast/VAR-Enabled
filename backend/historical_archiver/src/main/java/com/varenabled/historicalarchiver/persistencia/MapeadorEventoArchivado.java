@@ -15,7 +15,9 @@ public final class MapeadorEventoArchivado {
                 evento.team(),
                 evento.eventId(),
                 evento.annulsEventId(),
-                evento.points(),
+                evento.minuto(),
+                evento.minutoExtra(),
+                evento.minutosAgregados(),
                 evento.timestamp());
     }
 
@@ -27,7 +29,9 @@ public final class MapeadorEventoArchivado {
                 entidad.getTeam(),
                 entidad.getEventId(),
                 entidad.getAnnulsEventId(),
-                entidad.getPoints(),
+                entidad.getMinuto(),
+                entidad.getMinutoExtra(),
+                entidad.getMinutosAgregados(),
                 entidad.getTimestamp());
     }
 }

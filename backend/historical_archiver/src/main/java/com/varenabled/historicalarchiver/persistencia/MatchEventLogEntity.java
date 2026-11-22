@@ -22,21 +22,26 @@ public class MatchEventLogEntity {
     private String team;
     private String eventId;
     private String annulsEventId;
-    private Integer points;
+    private Integer minuto;
+    private Integer minutoExtra;
+    private Integer minutosAgregados;
     private Instant timestamp;
 
     protected MatchEventLogEntity() {
     }
 
     public MatchEventLogEntity(String matchId, String sport, String eventType, String team,
-                                String eventId, String annulsEventId, Integer points, Instant timestamp) {
+                                String eventId, String annulsEventId, Integer minuto, Integer minutoExtra,
+                                Integer minutosAgregados, Instant timestamp) {
         this.matchId = matchId;
         this.sport = sport;
         this.eventType = eventType;
         this.team = team;
         this.eventId = eventId;
         this.annulsEventId = annulsEventId;
-        this.points = points;
+        this.minuto = minuto;
+        this.minutoExtra = minutoExtra;
+        this.minutosAgregados = minutosAgregados;
         this.timestamp = timestamp;
     }
 
@@ -68,8 +73,16 @@ public class MatchEventLogEntity {
         return annulsEventId;
     }
 
-    public Integer getPoints() {
-        return points;
+    public Integer getMinuto() {
+        return minuto;
+    }
+
+    public Integer getMinutoExtra() {
+        return minutoExtra;
+    }
+
+    public Integer getMinutosAgregados() {
+        return minutosAgregados;
     }
 
     public Instant getTimestamp() {

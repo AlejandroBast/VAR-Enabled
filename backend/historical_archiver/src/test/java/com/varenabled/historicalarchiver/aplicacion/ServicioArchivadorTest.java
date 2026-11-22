@@ -36,7 +36,7 @@ class ServicioArchivadorTest {
 
     @Test
     void archivarUnGolLoGuardaYSumaAlMarcador() {
-        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, Instant.now());
+        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 10, 0, null, Instant.now());
 
         servicio.archivar(gol);
 
@@ -49,8 +49,8 @@ class ServicioArchivadorTest {
     void archivarUnGolAnuladoRegistraLaRevisionYRestaDelMarcador() {
         Instant momentoDelGol = Instant.parse("2026-01-01T10:00:00Z");
         Instant momentoDeLaAnulacion = momentoDelGol.plusSeconds(20);
-        EventoPartidoDto golOriginal = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, momentoDelGol);
-        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", null, momentoDeLaAnulacion);
+        EventoPartidoDto golOriginal = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 10, 0, null, momentoDelGol);
+        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", 12, 0, null, momentoDeLaAnulacion);
         when(registroEventos.buscarPorEventId("evt_g1")).thenReturn(Optional.of(golOriginal));
 
         servicio.archivar(golAnulado);
@@ -70,7 +70,7 @@ class ServicioArchivadorTest {
 
     @Test
     void archivarUnaAnulacionSinEncontrarElOriginalNoRegistraRevisionNiMarcador() {
-        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_fantasma", null, Instant.now());
+        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_fantasma", 12, 0, null, Instant.now());
         when(registroEventos.buscarPorEventId("evt_fantasma")).thenReturn(Optional.empty());
 
         servicio.archivar(golAnulado);
