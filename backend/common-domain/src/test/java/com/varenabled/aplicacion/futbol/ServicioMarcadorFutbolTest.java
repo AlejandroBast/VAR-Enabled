@@ -218,4 +218,31 @@ class ServicioMarcadorFutbolTest {
         verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 90, 3, EstadoPartido.FINALIZADO);
         assertEquals("MATCH_ENDED", alertaPublicada().tipoEvento());
     }
+
+    @Test
+    void procesarCreacionPublicaElPartidoPorJugarEnCeroSinAvisar() {
+        // Arrange
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
+
+        // Act
+        servicio.procesarCreacion(idPartido);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 0, 0, EstadoPartido.POR_JUGAR);
+        verify(publicadorAlertas, never()).publicarAlerta(any());
+    }
+
+    @Test
+    void procesarInicioPasaUnPartidoPorJugarAEnJuego() {
+        // Arrange
+        PartidoFutbol partidoProgramado = new PartidoFutbol(idPartido);
+        partidoProgramado.programar();
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoProgramado));
+
+        // Act
+        servicio.procesarInicio(idPartido, idEvento, 1, 0);
+
+        // Assert
+        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
+    }
 }

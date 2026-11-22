@@ -34,6 +34,7 @@ public class EscuchaEventosPartido implements ConsumerSeekAware {
         int minutoExtra = evento.minutoExtra() == null ? 0 : evento.minutoExtra();
 
         switch (evento.eventType()) {
+            case "MATCH_CREATED" -> servicio.procesarCreacion(idPartido);
             case "MATCH_STARTED" -> servicio.procesarInicio(idPartido, idEvento, minuto, minutoExtra);
             case "MATCH_ENDED" -> servicio.procesarFinal(idPartido, idEvento, minuto, minutoExtra);
             case "GOAL" -> servicio.procesarGol(idPartido, idEvento, mapearEquipo(evento.team()), minuto, minutoExtra);

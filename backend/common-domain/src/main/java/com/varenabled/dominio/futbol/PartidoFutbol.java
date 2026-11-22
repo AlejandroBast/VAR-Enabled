@@ -40,6 +40,14 @@ public class PartidoFutbol extends PartidoDeportivo {
         estado = EstadoPartido.EN_JUEGO;
     }
 
+    public void programar() {
+        estado = EstadoPartido.POR_JUGAR;
+    }
+
+    public void iniciar() {
+        estado = EstadoPartido.EN_JUEGO;
+    }
+
     public void iniciarRevisionVar() {
         estado = EstadoPartido.EN_REVISION;
     }

@@ -127,4 +127,15 @@ class PartidoFutbolTest {
 
         assertEquals(EstadoPartido.FINALIZADO, partido.obtenerEstado());
     }
+
+    @Test
+    void unPartidoProgramadoQuedaPorJugarHastaQueSeInicia() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.programar();
+        assertEquals(EstadoPartido.POR_JUGAR, partido.obtenerEstado());
+
+        partido.iniciar();
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+    }
 }

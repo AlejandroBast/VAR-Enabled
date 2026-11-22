@@ -22,9 +22,20 @@ public class ServicioMarcadorFutbol {
         this.publicadorAlertas = publicadorAlertas;
     }
 
+    /** El partido se creo pero no empezo: se publica 0-0 "por jugar", sin alerta. */
+    public void procesarCreacion(IdPartido idPartido) {
+        PartidoFutbol partido = obtenerOCrear(idPartido);
+
+        partido.programar();
+
+        repositorio.guardar(partido);
+        publicarMarcador(partido);
+    }
+
     public void procesarInicio(IdPartido idPartido, IdEvento idEvento, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
 
+        partido.iniciar();
         partido.actualizarMinuto(minuto, minutoExtra);
 
         guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "MATCH_STARTED", null, null,
