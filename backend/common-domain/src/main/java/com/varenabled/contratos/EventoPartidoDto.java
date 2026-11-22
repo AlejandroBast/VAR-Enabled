@@ -22,7 +22,7 @@ public record EventoPartidoDto(
         if (eventType == null || eventType.isBlank()) {
             throw new IllegalArgumentException("El eventType no puede ser nulo ni vacio");
         }
-        if (minuto == null || minuto < 1 || minuto > 90) {
+        if (minuto != null && (minuto < 1 || minuto > 90)) {
             throw new IllegalArgumentException("El minuto debe estar entre 1 y 90");
         }
         if (minutoExtra != null && (minutoExtra < 0 || minutoExtra > 10)) {

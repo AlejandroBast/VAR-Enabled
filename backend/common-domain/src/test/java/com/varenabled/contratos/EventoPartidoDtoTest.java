@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EventoPartidoDtoTest {
@@ -21,8 +22,8 @@ class EventoPartidoDtoTest {
     }
 
     @Test
-    void noPermiteUnMinutoNulo() {
-        assertThrows(IllegalArgumentException.class,
+    void permiteUnMinutoNuloParaNoRomperMensajesDeKafkaAnterioresAEsteContrato() {
+        assertDoesNotThrow(
                 () -> new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, null, null, Instant.now()));
     }
 
