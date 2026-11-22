@@ -28,7 +28,7 @@ public class ServicioMarcadorFutbol {
 
         repositorio.guardar(partido);
         publicadorMarcador.publicarMarcador(idPartido, partido.obtenerMarcador());
-        publicadorAlertas.publicarAlerta(idPartido, "¡GOL del equipo " + equipo + "!");
+        publicadorAlertas.publicarAlerta(idPartido, idEvento, "¡GOL del equipo " + equipo + "!");
     }
 
     public void procesarGolAnulado(IdPartido idPartido, IdEvento idEventoAnulado) {
@@ -38,7 +38,7 @@ public class ServicioMarcadorFutbol {
 
         repositorio.guardar(partido);
         publicadorMarcador.publicarMarcador(idPartido, partido.obtenerMarcador());
-        publicadorAlertas.publicarAlerta(idPartido, "¡GOL ANULADO POR EL VAR!");
+        publicadorAlertas.publicarAlerta(idPartido, idEventoAnulado, "¡GOL ANULADO POR EL VAR!");
     }
 
     private PartidoFutbol obtenerOCrear(IdPartido idPartido) {

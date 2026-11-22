@@ -53,7 +53,7 @@ class ServicioMarcadorFutbolTest {
         // Assert
         verify(repositorio).guardar(any(PartidoFutbol.class));
         verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)));
-        verify(publicadorAlertas).publicarAlerta(eq(idPartido), anyString());
+        verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
     @Test
@@ -69,7 +69,7 @@ class ServicioMarcadorFutbolTest {
         // Assert
         verify(repositorio).guardar(partidoExistente);
         verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero());
-        verify(publicadorAlertas).publicarAlerta(eq(idPartido), anyString());
+        verify(publicadorAlertas).publicarAlerta(eq(idPartido), eq(idEvento), anyString());
     }
 
     @Test
@@ -84,6 +84,6 @@ class ServicioMarcadorFutbolTest {
 
         verify(repositorio, never()).guardar(any());
         verify(publicadorMarcador, never()).publicarMarcador(any(), any());
-        verify(publicadorAlertas, never()).publicarAlerta(any(), anyString());
+        verify(publicadorAlertas, never()).publicarAlerta(any(), any(), anyString());
     }
 }
