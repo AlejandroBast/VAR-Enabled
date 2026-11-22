@@ -1,6 +1,7 @@
 package com.varenabled.livefeed;
 
 import com.varenabled.contratos.EventoPartidoDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ public class GeneradorEventosFutbol {
     private final AtomicInteger contadorDeGoles = new AtomicInteger();
     private volatile String idUltimoGolSinAnular;
 
+    @Autowired
     public GeneradorEventosFutbol(KafkaTemplate<String, Object> kafkaTemplate) {
         this(kafkaTemplate, new Random());
     }
