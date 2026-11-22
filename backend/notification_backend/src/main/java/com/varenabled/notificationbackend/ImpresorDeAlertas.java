@@ -17,7 +17,10 @@ public class ImpresorDeAlertas {
     }
 
     String formatear(AlertaPartidoDto alerta) {
-        return "[ALERTA] partido=%s evento=%s hora=%s -> %s".formatted(
-                alerta.matchId(), alerta.eventId(), alerta.timestamp(), alerta.mensaje());
+        String minuto = alerta.minutoExtra() > 0
+                ? alerta.minuto() + "+" + alerta.minutoExtra()
+                : String.valueOf(alerta.minuto());
+        return "[ALERTA] partido=%s evento=%s tipo=%s minuto=%s' hora=%s -> %s".formatted(
+                alerta.matchId(), alerta.eventId(), alerta.eventType(), minuto, alerta.timestamp(), alerta.mensaje());
     }
 }

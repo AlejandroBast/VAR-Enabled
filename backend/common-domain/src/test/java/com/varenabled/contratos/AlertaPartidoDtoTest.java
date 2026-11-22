@@ -11,12 +11,12 @@ class AlertaPartidoDtoTest {
     @Test
     void noPermiteUnMatchIdVacio() {
         assertThrows(IllegalArgumentException.class,
-                () -> new AlertaPartidoDto("", "evt_g1", "¡GOL!", Instant.now()));
+                () -> new AlertaPartidoDto("", "evt_g1", "GOAL", "home", null, 10, 0, "¡GOL!", Instant.now()));
     }
 
     @Test
     void noPermiteUnMensajeVacio() {
         assertThrows(IllegalArgumentException.class,
-                () -> new AlertaPartidoDto("123", "evt_g1", "", Instant.now()));
+                () -> new AlertaPartidoDto("123", "evt_g1", "GOAL", "home", null, 10, 0, "", Instant.now()));
     }
 }

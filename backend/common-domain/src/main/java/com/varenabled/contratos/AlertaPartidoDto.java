@@ -5,6 +5,11 @@ import java.time.Instant;
 public record AlertaPartidoDto(
         String matchId,
         String eventId,
+        String eventType,
+        String team,
+        String annulsEventId,
+        int minuto,
+        int minutoExtra,
         String mensaje,
         Instant timestamp
 ) {
