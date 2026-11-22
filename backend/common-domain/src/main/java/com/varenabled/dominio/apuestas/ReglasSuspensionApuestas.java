@@ -5,17 +5,9 @@ import java.util.Set;
 
 public final class ReglasSuspensionApuestas {
 
-    private static final Set<String> EVENTOS_QUE_SUSPENDEN = Set.of(
-            "GOAL", "VAR_CHECK",
-            "REVIEW_CHECK",
-            "CHALLENGE_REQUESTED", "SET_WON"
-    );
+    private static final Set<String> EVENTOS_QUE_SUSPENDEN = Set.of("GOAL", "VAR_CHECK");
 
-    private static final Set<String> EVENTOS_QUE_REANUDAN = Set.of(
-            "GOAL_ANNULLED", "MATCH_CONTINUES",
-            "BASKET_ANNULLED",
-            "POINT_ANNULLED"
-    );
+    private static final Set<String> EVENTOS_QUE_REANUDAN = Set.of("GOAL_ANNULLED", "MATCH_CONTINUES");
 
     private ReglasSuspensionApuestas() {
     }
