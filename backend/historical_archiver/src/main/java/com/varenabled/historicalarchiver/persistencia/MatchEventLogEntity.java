@@ -26,13 +26,17 @@ public class MatchEventLogEntity {
     private Integer minutoExtra;
     private Integer minutosAgregados;
     private Instant timestamp;
+    private String reviewsEventId;
+    private String homeTeam;
+    private String awayTeam;
 
     protected MatchEventLogEntity() {
     }
 
     public MatchEventLogEntity(String matchId, String sport, String eventType, String team,
                                 String eventId, String annulsEventId, Integer minuto, Integer minutoExtra,
-                                Integer minutosAgregados, Instant timestamp) {
+                                Integer minutosAgregados, Instant timestamp,
+                                String reviewsEventId, String homeTeam, String awayTeam) {
         this.matchId = matchId;
         this.sport = sport;
         this.eventType = eventType;
@@ -43,6 +47,9 @@ public class MatchEventLogEntity {
         this.minutoExtra = minutoExtra;
         this.minutosAgregados = minutosAgregados;
         this.timestamp = timestamp;
+        this.reviewsEventId = reviewsEventId;
+        this.homeTeam = homeTeam;
+        this.awayTeam = awayTeam;
     }
 
     public Long getId() {
@@ -87,5 +94,17 @@ public class MatchEventLogEntity {
 
     public Instant getTimestamp() {
         return timestamp;
+    }
+
+    public String getReviewsEventId() {
+        return reviewsEventId;
+    }
+
+    public String getHomeTeam() {
+        return homeTeam;
+    }
+
+    public String getAwayTeam() {
+        return awayTeam;
     }
 }

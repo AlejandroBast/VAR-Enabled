@@ -79,4 +79,16 @@ class ServicioArchivadorTest {
         verify(registroRevisiones, never()).guardar(any());
         verify(marcadorFinal, never()).restar(any(), any());
     }
+
+    @Test
+    void unaFaltaAnuladaQuedaAuditadaPeroNoRestaGoles() {
+        EventoPartidoDto falta = new EventoPartidoDto("123", "FOOTBALL", "FOUL", "home", "evt_f1", null, 10, 0, null, Instant.now());
+        EventoPartidoDto anulacion = new EventoPartidoDto("123", "FOOTBALL", "FOUL_ANNULLED", null, "evt_fa1", "evt_f1", 11, 0, null, Instant.now());
+        when(registroEventos.buscarPorEventId("evt_f1")).thenReturn(Optional.of(falta));
+
+        servicio.archivar(anulacion);
+
+        verify(registroRevisiones).guardar(any());
+        verify(marcadorFinal, never()).restar(any(), any());
+    }
 }

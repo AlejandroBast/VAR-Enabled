@@ -18,7 +18,10 @@ public final class MapeadorEventoArchivado {
                 evento.minuto(),
                 evento.minutoExtra(),
                 evento.minutosAgregados(),
-                evento.timestamp());
+                evento.timestamp(),
+                evento.reviewsEventId(),
+                evento.homeTeam(),
+                evento.awayTeam());
     }
 
     public static EventoPartidoDto aDto(MatchEventLogEntity entidad) {
@@ -32,6 +35,9 @@ public final class MapeadorEventoArchivado {
                 entidad.getMinuto(),
                 entidad.getMinutoExtra(),
                 entidad.getMinutosAgregados(),
-                entidad.getTimestamp());
+                entidad.getTimestamp(),
+                entidad.getReviewsEventId(),
+                entidad.getHomeTeam(),
+                entidad.getAwayTeam());
     }
 }
