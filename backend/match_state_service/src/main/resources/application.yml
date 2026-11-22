@@ -13,3 +13,8 @@ spring:
       properties:
         spring.json.trusted.packages: com.varenabled.contratos
         spring.json.value.default.type: com.varenabled.contratos.EventoPartidoDto
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
