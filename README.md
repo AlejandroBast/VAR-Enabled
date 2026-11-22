@@ -49,6 +49,7 @@ Kafka distribuye los eventos; RabbitMQ envía las alertas y órdenes; PostgreSQL
 | RN-05 | Un evento duplicado no modificará el marcador más de una vez. |
 | RN-06 | Los eventos del mismo partido se procesarán respetando su secuencia lógica. |
 
+<<<<<<< HEAD
 ### 4.2. Revisión por video
 
 | Código | Regla |
@@ -215,3 +216,14 @@ mvn clean test
 docker compose up --build -d
 docker compose ps
 ```
+=======
+## Diagrama de contexto 
+![diagrma de contexto](/docs/contexto.png)
+
+## Diagrama de entidad relacion
+![diagrama de entidad relacion](/docs/entidad_relacion.png)
+
+## Diagrama de componentes
+![diagrama de componentes](/docs/componentes.png)
+
+>>>>>>> e66cb69 (docs: actualiza el README)
