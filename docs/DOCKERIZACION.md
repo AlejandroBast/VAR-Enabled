@@ -15,7 +15,7 @@ Este documento resume todo lo que alguien necesita saber para contenerizar el ba
 |---|---|---|---|---|
 | `live_feed_producer` | Simula el partido: manda goles y anulaciones al azar | — | Kafka `match_events` | — |
 | `match_state_service` | El "cerebro": reconcilia el marcador de fútbol | Kafka `match_events` (`group-id: match-state-service`) | RabbitMQ `live_updates` (marcador) y `live_alerts` (alertas) | — |
-| `dashboard_backend` | Sirve el marcador en vivo por WebSocket | RabbitMQ `live_updates` (routing `score.*`) | WebSocket en `/marcador` | **8081** (exponer al host) |
+| `dashboard_backend` | Sirve el marcador y los eventos en vivo por WebSocket | RabbitMQ `live_updates` (routing `score.*`) y `live_alerts` | WebSocket en `/marcador` | **8081** (exponer al host) |
 | `notification_backend` | Imprime las alertas con trazabilidad | RabbitMQ `live_alerts` | consola | — |
 | `betting_suspension_service` | Decide si suspender/reanudar apuestas | Kafka `match_events` (`group-id: betting-suspension-service`, grupo independiente) | RabbitMQ `betting_commands` | — |
 | `betting_worker` | Ejecuta la suspensión/reanudación (idempotente) | RabbitMQ `betting_commands` | consola | — (pensado para correr con **varias réplicas**) |
@@ -36,7 +36,7 @@ Los exchanges y colas los declaran los propios microservicios por código (`@Bea
 | Nombre | Tipo | Quién publica | Quién consume |
 |---|---|---|---|
 | `live_updates` | Topic Exchange | `match_state_service` (routing key `score.match_<id>`) | `dashboard_backend` (bind con `score.*`) |
-| `live_alerts` | Fanout Exchange | `match_state_service` | `notification_backend` |
+| `live_alerts` | Fanout Exchange | `match_state_service` | `notification_backend` y `dashboard_backend` (cada uno con su propia cola) |
 | `betting_commands` | Cola directa (Work Queue) | `betting_suspension_service` | `betting_worker` (con réplicas, se reparten los mensajes) |
 
 Imagen recomendada: `rabbitmq:3-management` (el plugin de management ayuda a depurar visualmente en `localhost:15672`, usuario/clave por defecto `guest`/`guest`).
