@@ -5,6 +5,7 @@ import com.varenabled.dominio.EventoInexistenteException;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
+import com.varenabled.dominio.apuestas.EstadoApuestasPartido;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -177,5 +178,50 @@ class PartidoFutbolTest {
 
         assertEquals("Nacional", partido.obtenerEquipoLocal());
         assertEquals("América", partido.obtenerEquipoVisitante());
+    }
+
+    @Test
+    void lasApuestasSoloEstanAbiertasMientrasVaCeroACero() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.programar();
+        assertEquals(null, partido.obtenerApuestas());
+
+        partido.iniciar();
+        assertEquals(EstadoApuestasPartido.ABIERTAS, partido.obtenerApuestas());
+
+        partido.anotarGol(new IdEvento("evt_g1"), Equipo.LOCAL);
+        assertEquals(EstadoApuestasPartido.CERRADAS, partido.obtenerApuestas());
+    }
+
+    @Test
+    void conUnGolLasApuestasSiguenCerradasAunqueElVarConfirmeLaJugada() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.anotarGol(new IdEvento("evt_g1"), Equipo.LOCAL);
+
+        partido.iniciarRevisionVar();
+        assertEquals(EstadoApuestasPartido.DETENIDAS, partido.obtenerApuestas());
+
+        partido.confirmarJugadaPorVar();
+        assertEquals(EstadoApuestasPartido.CERRADAS, partido.obtenerApuestas());
+    }
+
+    @Test
+    void siElVarAnulaElUnicoGolVuelveAlCeroACeroYLasApuestasSeAbren() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.anotarGol(new IdEvento("evt_g1"), Equipo.VISITANTE);
+        partido.iniciarRevisionVar();
+
+        partido.anularGolPorVar(new IdEvento("evt_g1"));
+
+        assertEquals(EstadoApuestasPartido.ABIERTAS, partido.obtenerApuestas());
+    }
+
+    @Test
+    void alFinalLasApuestasQuedanCerradasAunqueVayaCeroACero() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.finalizar();
+
+        assertEquals(EstadoApuestasPartido.CERRADAS, partido.obtenerApuestas());
     }
 }

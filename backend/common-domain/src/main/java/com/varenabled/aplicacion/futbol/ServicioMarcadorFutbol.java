@@ -6,7 +6,6 @@ import com.varenabled.aplicacion.PublicadorMarcadorPort;
 import com.varenabled.dominio.Equipo;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
-import com.varenabled.dominio.apuestas.ReglasSuspensionApuestas;
 import com.varenabled.dominio.futbol.PartidoFutbol;
 
 public class ServicioMarcadorFutbol {
@@ -157,17 +156,6 @@ public class ServicioMarcadorFutbol {
                 minuto, 0, minutosAgregados == 1 ? "Se añade 1 minuto" : "Se añaden " + minutosAgregados + " minutos"));
     }
 
-    /** Un gol paso sus 2 minutos sin revision y quedo firme: las apuestas se reabren, sin alerta. */
-    public void procesarGolConfirmado(IdPartido idPartido, int minuto, int minutoExtra) {
-        PartidoFutbol partido = obtenerOCrear(idPartido);
-
-        partido.actualizarMinuto(minuto, minutoExtra);
-        ReglasSuspensionApuestas.estadoDespuesDe("GOAL_CONFIRMED").ifPresent(partido::cambiarApuestas);
-
-        repositorio.guardar(partido);
-        publicadorMarcador.publicarMarcador(partido);
-    }
-
     /** El reloj avanzo (o llego un evento sin alerta): solo se mueve el minuto. */
     public void actualizarMinuto(IdPartido idPartido, int minuto, int minutoExtra) {
         PartidoFutbol partido = obtenerOCrear(idPartido);
@@ -179,8 +167,6 @@ public class ServicioMarcadorFutbol {
     }
 
     private void guardarYPublicar(PartidoFutbol partido, AlertaPartido alerta) {
-        // Cada evento puede abrir, cerrar o detener las apuestas (misma regla que betting_suspension_service).
-        ReglasSuspensionApuestas.estadoDespuesDe(alerta.tipoEvento()).ifPresent(partido::cambiarApuestas);
         repositorio.guardar(partido);
         publicadorMarcador.publicarMarcador(partido);
         publicadorAlertas.publicarAlerta(alerta);

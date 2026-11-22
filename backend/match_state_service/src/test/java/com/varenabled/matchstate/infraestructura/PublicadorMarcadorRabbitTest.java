@@ -31,7 +31,6 @@ class PublicadorMarcadorRabbitTest {
         partido.registrarFalta(new IdEvento("evt_f1"), Equipo.VISITANTE);
         partido.actualizarMinuto(23, 0);
         partido.iniciarRevisionVar();
-        partido.cambiarApuestas(com.varenabled.dominio.apuestas.EstadoApuestasPartido.DETENIDAS);
 
         adaptador.publicarMarcador(partido);
 

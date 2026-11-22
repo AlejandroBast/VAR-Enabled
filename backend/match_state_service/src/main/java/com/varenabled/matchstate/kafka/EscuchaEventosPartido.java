@@ -47,10 +47,9 @@ public class EscuchaEventosPartido implements ConsumerSeekAware {
                     servicio.procesarTarjeta(idPartido, idEvento, evento.eventType(), mapearEquipo(evento.team()), minuto, minutoExtra);
             case "VAR_CHECK" -> servicio.procesarRevisionVar(idPartido, idEvento, id(evento.reviewsEventId()), minuto, minutoExtra);
             case "MATCH_CONTINUES" -> servicio.procesarJugadaConfirmada(idPartido, idEvento, id(evento.reviewsEventId()), minuto, minutoExtra);
-            case "GOAL_CONFIRMED" -> servicio.procesarGolConfirmado(idPartido, minuto, minutoExtra);
             case "ADDED_TIME" -> servicio.procesarTiempoAnadido(idPartido, idEvento, minuto,
                     evento.minutosAgregados() == null ? 0 : evento.minutosAgregados());
-            // CLOCK_TICK (el reloj avanzo) y cualquier otro:
+            // CLOCK_TICK (el reloj avanzo), GOAL_CONFIRMED (un gol quedo firme) y cualquier otro:
             // solo se mueve el minuto, sin alerta.
             default -> servicio.actualizarMinuto(idPartido, minuto, minutoExtra);
         }

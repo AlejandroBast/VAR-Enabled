@@ -16,24 +16,6 @@ public final class ReglasSuspensionApuestas {
     private ReglasSuspensionApuestas() {
     }
 
-    /**
-     * Como quedan las apuestas para el publico despues de un evento (vacio si el evento no las cambia).
-     * Es la misma regla que evaluar(), pero distingue por que estan suspendidas:
-     * CERRADAS por un gol o el final, DETENIDAS por una revision VAR.
-     */
-    public static Optional<EstadoApuestasPartido> estadoDespuesDe(String eventType) {
-        if ("VAR_CHECK".equals(eventType)) {
-            return Optional.of(EstadoApuestasPartido.DETENIDAS);
-        }
-        if (EVENTOS_QUE_SUSPENDEN.contains(eventType)) {
-            return Optional.of(EstadoApuestasPartido.CERRADAS);
-        }
-        if (EVENTOS_QUE_REANUDAN.contains(eventType) || "MATCH_STARTED".equals(eventType)) {
-            return Optional.of(EstadoApuestasPartido.ABIERTAS);
-        }
-        return Optional.empty();
-    }
-
     public static Optional<ComandoApuesta> evaluar(String eventType) {
         if (EVENTOS_QUE_SUSPENDEN.contains(eventType)) {
             return Optional.of(ComandoApuesta.SUSPENDER);

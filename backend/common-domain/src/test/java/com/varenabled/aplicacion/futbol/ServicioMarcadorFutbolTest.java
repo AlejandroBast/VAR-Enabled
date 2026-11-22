@@ -231,7 +231,7 @@ class ServicioMarcadorFutbolTest {
     }
 
     @Test
-    void lasApuestasSeAbrenAlEmpezarSeCierranConUnGolYSeDetienenEnLaRevision() {
+    void lasApuestasPublicadasSiguenAlMarcador() {
         PartidoFutbol partido = new PartidoFutbol(idPartido);
         conPartidoGuardado(partido);
 
@@ -245,18 +245,6 @@ class ServicioMarcadorFutbolTest {
         assertEquals(EstadoApuestasPartido.DETENIDAS, partido.obtenerApuestas());
 
         servicio.procesarJugadaConfirmada(idPartido, new IdEvento("evt_c1"), idEvento, 11, 0);
-        assertEquals(EstadoApuestasPartido.ABIERTAS, partido.obtenerApuestas());
-    }
-
-    @Test
-    void unGolQueQuedaFirmeReabreLasApuestasSinAvisar() {
-        PartidoFutbol partido = new PartidoFutbol(idPartido);
-        partido.cambiarApuestas(EstadoApuestasPartido.CERRADAS);
-        conPartidoGuardado(partido);
-
-        servicio.procesarGolConfirmado(idPartido, 13, 0);
-
-        assertEquals(EstadoApuestasPartido.ABIERTAS, partidoPublicado().obtenerApuestas());
-        verify(publicadorAlertas, never()).publicarAlerta(any());
+        assertEquals(EstadoApuestasPartido.CERRADAS, partido.obtenerApuestas());
     }
 }

@@ -52,36 +52,4 @@ class ReglasSuspensionApuestasTest {
     void unaFaltaAnuladaPorElVarReabreLasApuestas() {
         assertEquals(Optional.of(ComandoApuesta.REANUDAR), ReglasSuspensionApuestas.evaluar("FOUL_ANNULLED"));
     }
-
-    @Test
-    void alEmpezarElPartidoLasApuestasEstanAbiertas() {
-        assertEquals(Optional.of(EstadoApuestasPartido.ABIERTAS), ReglasSuspensionApuestas.estadoDespuesDe("MATCH_STARTED"));
-    }
-
-    @Test
-    void unGolCierraLasApuestas() {
-        assertEquals(Optional.of(EstadoApuestasPartido.CERRADAS), ReglasSuspensionApuestas.estadoDespuesDe("GOAL"));
-    }
-
-    @Test
-    void duranteLaRevisionVarLasApuestasEstanDetenidas() {
-        assertEquals(Optional.of(EstadoApuestasPartido.DETENIDAS), ReglasSuspensionApuestas.estadoDespuesDe("VAR_CHECK"));
-    }
-
-    @Test
-    void cuandoLaJugadaSeResuelveLasApuestasSeAbren() {
-        for (String evento : new String[]{"MATCH_CONTINUES", "GOAL_ANNULLED", "FOUL_ANNULLED", "GOAL_CONFIRMED"}) {
-            assertEquals(Optional.of(EstadoApuestasPartido.ABIERTAS), ReglasSuspensionApuestas.estadoDespuesDe(evento), evento);
-        }
-    }
-
-    @Test
-    void alFinalLasApuestasQuedanCerradas() {
-        assertEquals(Optional.of(EstadoApuestasPartido.CERRADAS), ReglasSuspensionApuestas.estadoDespuesDe("MATCH_ENDED"));
-    }
-
-    @Test
-    void unaFaltaNoCambiaElEstadoDeLasApuestas() {
-        assertEquals(Optional.empty(), ReglasSuspensionApuestas.estadoDespuesDe("FOUL"));
-    }
 }

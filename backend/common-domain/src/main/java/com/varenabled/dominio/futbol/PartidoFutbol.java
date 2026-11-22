@@ -28,8 +28,6 @@ public class PartidoFutbol extends PartidoDeportivo {
     private EstadoPartido estado = EstadoPartido.EN_JUEGO;
     private String equipoLocal;
     private String equipoVisitante;
-    // null mientras el partido no empieza.
-    private EstadoApuestasPartido apuestas;
 
     public PartidoFutbol(IdPartido id) {
         super(id);
@@ -92,12 +90,19 @@ public class PartidoFutbol extends PartidoDeportivo {
         estado = EstadoPartido.FINALIZADO;
     }
 
-    public void cambiarApuestas(EstadoApuestasPartido apuestas) {
-        this.apuestas = apuestas;
-    }
-
+    /**
+     * Las apuestas solo estan abiertas mientras el partido va 0-0.
+     * - Por jugar: todavia no hay apuestas en vivo (null).
+     * - Revision VAR: detenidas (si se anula el gol, puede volver al 0-0).
+     * - Final, o cualquier gol en el marcador: cerradas.
+     */
     public EstadoApuestasPartido obtenerApuestas() {
-        return apuestas;
+        return switch (estado) {
+            case POR_JUGAR -> null;
+            case EN_REVISION -> EstadoApuestasPartido.DETENIDAS;
+            case FINALIZADO -> EstadoApuestasPartido.CERRADAS;
+            default -> marcador.equals(Marcador.enCero()) ? EstadoApuestasPartido.ABIERTAS : EstadoApuestasPartido.CERRADAS;
+        };
     }
 
     public void actualizarMinuto(int minuto, int minutoExtra) {
