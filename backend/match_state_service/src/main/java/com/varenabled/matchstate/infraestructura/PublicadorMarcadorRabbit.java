@@ -28,7 +28,8 @@ public class PublicadorMarcadorRabbit implements PublicadorMarcadorPort {
                 partido.obtenerEquipoLocal(),
                 partido.obtenerEquipoVisitante(),
                 partido.obtenerFaltas().local(),
-                partido.obtenerFaltas().visitante());
+                partido.obtenerFaltas().visitante(),
+                partido.obtenerApuestas() == null ? null : partido.obtenerApuestas().name());
 
         rabbitTemplate.convertAndSend(ConfiguracionRabbitMQ.EXCHANGE_MARCADOR, "score.match_" + matchId, actualizacion);
     }

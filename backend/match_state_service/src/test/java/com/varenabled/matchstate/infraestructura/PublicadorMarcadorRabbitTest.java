@@ -31,12 +31,13 @@ class PublicadorMarcadorRabbitTest {
         partido.registrarFalta(new IdEvento("evt_f1"), Equipo.VISITANTE);
         partido.actualizarMinuto(23, 0);
         partido.iniciarRevisionVar();
+        partido.cambiarApuestas(com.varenabled.dominio.apuestas.EstadoApuestasPartido.DETENIDAS);
 
         adaptador.publicarMarcador(partido);
 
         verify(rabbitTemplate).convertAndSend(
                 ConfiguracionRabbitMQ.EXCHANGE_MARCADOR,
                 "score.match_123",
-                new ActualizacionMarcadorDto("123", 1, 0, 23, 0, "EN_REVISION", "Nacional", "América", 0, 1));
+                new ActualizacionMarcadorDto("123", 1, 0, 23, 0, "EN_REVISION", "Nacional", "América", 0, 1, "DETENIDAS"));
     }
 }

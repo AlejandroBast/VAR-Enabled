@@ -8,6 +8,7 @@ import com.varenabled.dominio.EventoInexistenteException;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
+import com.varenabled.dominio.apuestas.EstadoApuestasPartido;
 import com.varenabled.dominio.futbol.EstadoPartido;
 import com.varenabled.dominio.futbol.PartidoFutbol;
 import org.junit.jupiter.api.Test;
@@ -226,6 +227,36 @@ class ServicioMarcadorFutbolTest {
         servicio.actualizarMinuto(idPartido, 1, 0);
 
         assertEquals(1, partidoPublicado().obtenerMinutoActual());
+        verify(publicadorAlertas, never()).publicarAlerta(any());
+    }
+
+    @Test
+    void lasApuestasSeAbrenAlEmpezarSeCierranConUnGolYSeDetienenEnLaRevision() {
+        PartidoFutbol partido = new PartidoFutbol(idPartido);
+        conPartidoGuardado(partido);
+
+        servicio.procesarInicio(idPartido, idEvento, 1, 0);
+        assertEquals(EstadoApuestasPartido.ABIERTAS, partido.obtenerApuestas());
+
+        servicio.procesarGol(idPartido, idEvento, Equipo.LOCAL, 10, 0);
+        assertEquals(EstadoApuestasPartido.CERRADAS, partido.obtenerApuestas());
+
+        servicio.procesarRevisionVar(idPartido, idOtroEvento, idEvento, 11, 0);
+        assertEquals(EstadoApuestasPartido.DETENIDAS, partido.obtenerApuestas());
+
+        servicio.procesarJugadaConfirmada(idPartido, new IdEvento("evt_c1"), idEvento, 11, 0);
+        assertEquals(EstadoApuestasPartido.ABIERTAS, partido.obtenerApuestas());
+    }
+
+    @Test
+    void unGolQueQuedaFirmeReabreLasApuestasSinAvisar() {
+        PartidoFutbol partido = new PartidoFutbol(idPartido);
+        partido.cambiarApuestas(EstadoApuestasPartido.CERRADAS);
+        conPartidoGuardado(partido);
+
+        servicio.procesarGolConfirmado(idPartido, 13, 0);
+
+        assertEquals(EstadoApuestasPartido.ABIERTAS, partidoPublicado().obtenerApuestas());
         verify(publicadorAlertas, never()).publicarAlerta(any());
     }
 }

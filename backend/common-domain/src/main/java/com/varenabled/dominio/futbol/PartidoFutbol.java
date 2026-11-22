@@ -6,6 +6,7 @@ import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
 import com.varenabled.dominio.PartidoDeportivo;
+import com.varenabled.dominio.apuestas.EstadoApuestasPartido;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,8 @@ public class PartidoFutbol extends PartidoDeportivo {
     private EstadoPartido estado = EstadoPartido.EN_JUEGO;
     private String equipoLocal;
     private String equipoVisitante;
+    // null mientras el partido no empieza.
+    private EstadoApuestasPartido apuestas;
 
     public PartidoFutbol(IdPartido id) {
         super(id);
@@ -87,6 +90,14 @@ public class PartidoFutbol extends PartidoDeportivo {
 
     public void finalizar() {
         estado = EstadoPartido.FINALIZADO;
+    }
+
+    public void cambiarApuestas(EstadoApuestasPartido apuestas) {
+        this.apuestas = apuestas;
+    }
+
+    public EstadoApuestasPartido obtenerApuestas() {
+        return apuestas;
     }
 
     public void actualizarMinuto(int minuto, int minutoExtra) {

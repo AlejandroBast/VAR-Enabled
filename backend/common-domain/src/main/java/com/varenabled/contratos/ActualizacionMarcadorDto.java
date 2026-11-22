@@ -10,7 +10,8 @@ public record ActualizacionMarcadorDto(
         String equipoLocal,
         String equipoVisitante,
         int faltasLocal,
-        int faltasVisitante
+        int faltasVisitante,
+        String apuestas
 ) {
 
     public ActualizacionMarcadorDto {
@@ -27,6 +28,6 @@ public record ActualizacionMarcadorDto(
 
     /** Forma corta, sin nombres de equipos ni faltas. */
     public ActualizacionMarcadorDto(String matchId, int local, int visitante, int minuto, int minutoExtra, String estado) {
-        this(matchId, local, visitante, minuto, minutoExtra, estado, null, null, 0, 0);
+        this(matchId, local, visitante, minuto, minutoExtra, estado, null, null, 0, 0, null);
     }
 }
