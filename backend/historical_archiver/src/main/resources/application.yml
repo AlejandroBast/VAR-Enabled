@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: historical-archiver
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  datasource:
+    url: jdbc:postgresql://localhost:5432/var_enabled
+    username: var_enabled
+    password: var_enabled
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: historical-archiver
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.varenabled.contratos
+        spring.json.value.default.type: com.varenabled.contratos.EventoPartidoDto
