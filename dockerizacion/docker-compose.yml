@@ -1,0 +1,195 @@
+# VAR-Enabled: infraestructura + 7 microservicios
+# Desde esta carpeta (dockerizacion/):  docker compose up --build
+# Contexto de build: ../backend (monorepo Maven). Dockerfiles en servicios/<servicio>/.
+
+name: var-enabled
+
+x-spring-service: &spring-service
+  restart: unless-stopped
+  networks: [mensajeria]
+  deploy: &spring-deploy
+    resources:
+      limits:
+        cpus: "0.50"
+        memory: 512M
+
+x-kafka-env: &kafka-env
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+x-rabbit-env: &rabbit-env
+  SPRING_RABBITMQ_HOST: rabbitmq
+  SPRING_RABBITMQ_PORT: 5672
+  SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+  SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+
+services:
+  # ---------------- Infraestructura ----------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks: [mensajeria]
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+    networks: [mensajeria]
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1G }
+
+  # Declara el topic de forma explicita y termina
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      kafka: { condition: service_healthy }
+    entrypoint: ["kafka-topics", "--bootstrap-server", "kafka:29092",
+                 "--create", "--if-not-exists", "--topic", "match_events",
+                 "--partitions", "3", "--replication-factor", "1"]
+    restart: "no"
+    networks: [mensajeria]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"   # UI de management (depuracion)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks: [mensajeria]
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+
+  postgres-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-var_enabled}
+      POSTGRES_USER: ${POSTGRES_USER:-var_enabled}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-var_enabled}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [persistencia]
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+
+  # ---------------- Microservicios ----------------
+  live_feed_producer:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/live_feed_producer/Dockerfile }
+    image: var-enabled/live_feed_producer
+    environment:
+      <<: *kafka-env
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      # arranca despues de los consumidores para no perder los primeros eventos
+      match_state_service: { condition: service_started }
+      betting_suspension_service: { condition: service_started }
+      historical_archiver: { condition: service_started }
+
+  match_state_service:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/match_state_service/Dockerfile }
+    image: var-enabled/match_state_service
+    environment:
+      <<: [*kafka-env, *rabbit-env]
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      rabbitmq: { condition: service_healthy }
+
+  dashboard_backend:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/dashboard_backend/Dockerfile }
+    image: var-enabled/dashboard_backend
+    environment:
+      <<: *rabbit-env
+    ports:
+      - "8081:8081"     # WebSocket ws://localhost:8081/marcador
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  notification_backend:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/notification_backend/Dockerfile }
+    image: var-enabled/notification_backend
+    environment:
+      <<: *rabbit-env
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  betting_suspension_service:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/betting_suspension_service/Dockerfile }
+    image: var-enabled/betting_suspension_service
+    environment:
+      <<: [*kafka-env, *rabbit-env]
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      rabbitmq: { condition: service_healthy }
+
+  betting_worker:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/betting_worker/Dockerfile }
+    image: var-enabled/betting_worker
+    environment:
+      <<: *rabbit-env
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    deploy:
+      <<: *spring-deploy
+      replicas: 3       # balanceo de carga de la Work Queue betting_commands
+
+  historical_archiver:
+    <<: *spring-service
+    build: { context: ../backend, dockerfile: ../dockerizacion/servicios/historical_archiver/Dockerfile }
+    image: var-enabled/historical_archiver
+    environment:
+      <<: *kafka-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/${POSTGRES_DB:-var_enabled}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-var_enabled}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-var_enabled}
+    networks: [mensajeria, persistencia]
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      postgres-db: { condition: service_healthy }
+
+networks:
+  mensajeria:     # Kafka, RabbitMQ y microservicios
+  persistencia:   # solo Postgres y historical_archiver
+    internal: true
+
+volumes:
+  postgres-data:
