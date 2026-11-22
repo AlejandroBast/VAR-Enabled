@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: dashboard-backend
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+server:
+  port: 8081
