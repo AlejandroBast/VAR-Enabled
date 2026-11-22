@@ -154,7 +154,7 @@ class ServicioMarcadorFutbolTest {
         AlertaPartido alerta = alertaPublicada();
         assertEquals("ADDED_TIME", alerta.tipoEvento());
         assertEquals(45, alerta.minuto());
-        assertEquals("Se anaden 3 minutos", alerta.mensaje());
+        assertEquals("Se añaden 3 minutos", alerta.mensaje());
     }
 
     @Test

@@ -49,7 +49,7 @@ public class ServicioMarcadorFutbol {
         partido.actualizarMinuto(minuto, minutoExtra);
 
         guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "VAR_CHECK", null, null,
-                minuto, minutoExtra, "Revision VAR en curso"));
+                minuto, minutoExtra, "Revisión VAR en curso"));
     }
 
     public void procesarJugadaConfirmada(IdPartido idPartido, IdEvento idEvento, int minuto, int minutoExtra) {
@@ -78,7 +78,7 @@ public class ServicioMarcadorFutbol {
         partido.actualizarMinuto(minuto, 0);
 
         guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "ADDED_TIME", null, null,
-                minuto, 0, "Se anaden " + minutosAgregados + " minutos"));
+                minuto, 0, "Se añaden " + minutosAgregados + " minutos"));
     }
 
     public void actualizarMinuto(IdPartido idPartido, int minuto, int minutoExtra) {

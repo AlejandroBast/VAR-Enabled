@@ -18,7 +18,7 @@ class EscuchaEventosTest {
     private MarcadorWebSocketHandler handler;
 
     private final AlertaPartidoDto revision = new AlertaPartidoDto(
-            "123", "evt_v1", "VAR_CHECK", null, null, 30, 0, "Revision VAR en curso", Instant.now());
+            "123", "evt_v1", "VAR_CHECK", null, null, 30, 0, "Revisión VAR en curso", Instant.now());
 
     @Test
     void transmiteElEventoAlFrontend() {
