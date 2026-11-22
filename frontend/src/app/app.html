@@ -1,35 +1,83 @@
-<main class="dashboard">
-  <header class="encabezado">
-    <div>
-      <p class="etiqueta">VAR-Enabled</p>
-      <h1>Marcadores en vivo</h1>
-      <p class="subtitulo">Sigue la actualización oficial de cada partido.</p>
-    </div>
-    <div class="conexion" [class.activa]="conectado()">
-      <span aria-hidden="true"></span>
-      {{ mensajeEstado() }}
-    </div>
-  </header>
+<ng-template #escudo>
+  <svg class="escudo" viewBox="0 0 40 46" aria-hidden="true">
+    <path d="M20 2 L37 8 V22 C37 33 29 41 20 44 C11 41 3 33 3 22 V8 Z" />
+  </svg>
+</ng-template>
 
-  @if (partidos().length > 0) {
-    <section class="partidos" aria-label="Partidos en vivo">
-      @for (partido of partidos(); track partido.match_id) {
-        <article class="partido">
-          <p class="id-partido">Partido {{ partido.match_id }}</p>
-          <p class="minuto">{{ partido.minuto_extra ? partido.minuto + "+" + partido.minuto_extra : partido.minuto }}'</p>
-          <div class="marcador" aria-label="Marcador">
-            <span>{{ partido.local }}</span><b>—</b><span>{{ partido.visitante }}</span>
+<main class="dashboard">
+  <aside class="lista">
+    <header class="lista-encabezado">
+      <h1>Partidos</h1>
+      <span class="conexion" [class.activa]="conectado()" [title]="conectado() ? 'Conectado en tiempo real' : 'Reconectando...'"></span>
+    </header>
+
+    @for (partido of partidos(); track partido.marcador.match_id) {
+      <button type="button" class="tarjeta"
+              [class.seleccionada]="partido === partidoSeleccionado()"
+              (click)="seleccionar(partido.marcador.match_id)">
+        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />LOC</span>
+        <span class="centro">
+          @if (partido.marcador.estado === 'EN_REVISION') {
+            <span class="insignia revision">Revisión VAR</span>
+          } @else {
+            <span class="insignia en-juego">En juego</span>
+          }
+          <span class="minuto">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
+          <span class="marcador-mini">{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
+          <span class="id">Partido {{ partido.marcador.match_id }}</span>
+        </span>
+        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />VIS</span>
+      </button>
+    } @empty {
+      <p class="lista-vacia">Aún no hay partidos en vivo.</p>
+    }
+  </aside>
+
+  <section class="detalle">
+    @if (partidoSeleccionado(); as partido) {
+      <header class="cabecera">
+        <h2>Partido {{ partido.marcador.match_id }}</h2>
+        @if (partido.marcador.estado === 'EN_REVISION') {
+          <span class="insignia grande revision">Revisión VAR en curso</span>
+        } @else {
+          <span class="insignia grande en-juego">En juego</span>
+        }
+        <p class="resumen">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} <b>|</b> {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</p>
+
+        <div class="enfrentamiento">
+          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>Local</span></div>
+          <div class="marcador" [class.en-revision]="partido.marcador.estado === 'EN_REVISION'">
+            {{ partido.marcador.local }} - {{ partido.marcador.visitante }}
           </div>
-          <p class="equipos">Local <span>vs.</span> Visitante</p>
-        </article>
+          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>Visitante</span></div>
+        </div>
+      </header>
+
+      @if (partido.marcador.estado === 'EN_REVISION') {
+        <p class="aviso-revision" role="status">El VAR está revisando una jugada. Las apuestas de este partido están suspendidas.</p>
       }
-    </section>
-  } @else {
-    <section class="vacio" aria-live="polite">
-      <div class="icono">⚽</div>
-      <h2>Aún no hay partidos para mostrar</h2>
-      <p>Cuando el sistema reciba una actualización, el marcador aparecerá aquí automáticamente.</p>
-      @if (!conectado()) { <button type="button" (click)="reconectar()">Reintentar conexión</button> }
-    </section>
-  }
+
+      <article class="panel">
+        <h3>Partido</h3>
+        @for (fila of lineaDeTiempo(); track $index) {
+          <div class="fila" [class.anulado]="fila.anulado">
+            <span class="fila-minuto">{{ fila.minuto }}</span>
+            <span [class]="'fila-icono ' + fila.clase">{{ fila.icono }}</span>
+            <span class="fila-texto">
+              <strong>{{ fila.titulo }}</strong>
+              <span>{{ fila.descripcion }}</span>
+            </span>
+          </div>
+        } @empty {
+          <p class="panel-vacio">Todavía no hay eventos en este partido.</p>
+        }
+      </article>
+    } @else {
+      <div class="vacio" aria-live="polite">
+        <h2>Esperando partidos</h2>
+        <p>Cuando llegue el primer evento de un partido, aparecerá aquí automáticamente.</p>
+        @if (!conectado()) { <button type="button" class="reintentar" (click)="reconectar()">Reintentar conexión</button> }
+      </div>
+    }
+  </section>
 </main>
