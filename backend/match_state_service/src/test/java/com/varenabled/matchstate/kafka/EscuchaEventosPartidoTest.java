@@ -6,11 +6,13 @@ import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
 import com.varenabled.dominio.futbol.PartidoFutbol;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Optional;
 
@@ -26,6 +28,9 @@ class EscuchaEventosPartidoTest {
 
     @Autowired
     private RepositorioPartidoFutbolPort repositorio;
+
+    @MockitoBean
+    private RabbitTemplate rabbitTemplate;
 
     @Test
     void unGolAnuladoDejaElMarcadorEnCero() throws InterruptedException {
