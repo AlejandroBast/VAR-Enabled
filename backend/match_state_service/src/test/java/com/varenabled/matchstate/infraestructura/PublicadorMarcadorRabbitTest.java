@@ -1,5 +1,6 @@
 package com.varenabled.matchstate.infraestructura;
 
+import com.varenabled.contratos.ActualizacionMarcadorDto;
 import com.varenabled.dominio.IdPartido;
 import com.varenabled.dominio.Marcador;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,6 @@ class PublicadorMarcadorRabbitTest {
         verify(rabbitTemplate).convertAndSend(
                 ConfiguracionRabbitMQ.EXCHANGE_MARCADOR,
                 "score.match_123",
-                new Marcador(1, 0));
+                new ActualizacionMarcadorDto("123", 1, 0));
     }
 }
