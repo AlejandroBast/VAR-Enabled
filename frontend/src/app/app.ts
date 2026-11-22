@@ -58,6 +58,22 @@ const ETIQUETA_ESTADO: Record<EstadoPartido, string> = {
   FINALIZADO: 'Finalizado',
 };
 
+/**
+ * Con ng serve (o con el build abierto en otro puerto) el WebSocket esta en el 8081 local.
+ * Si la pagina se sirve en el puerto estandar (80 o 443) hay un proxy delante, como Caddy
+ * en AWS, y el WebSocket va por el mismo origen: asi tambien funciona con HTTPS (wss).
+ */
+export function urlDelMarcador(
+  ubicacion: Pick<Location, 'protocol' | 'hostname' | 'host' | 'port'>,
+): string {
+  const protocolo = ubicacion.protocol === 'https:' ? 'wss' : 'ws';
+  const destino =
+    ubicacion.hostname && ubicacion.port === ''
+      ? ubicacion.host
+      : `${ubicacion.hostname || 'localhost'}:8081`;
+  return `${protocolo}://${destino}/marcador`;
+}
+
 @Component({
   selector: 'app-root',
   imports: [NgTemplateOutlet],
@@ -131,8 +147,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   private conectar(): void {
-    const protocolo = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    this.socket = new WebSocket(`${protocolo}://${window.location.hostname || 'localhost'}:8081/marcador`);
+    this.socket = new WebSocket(urlDelMarcador(window.location));
     this.socket.onopen = () => {
       // Al conectarse, el backend vuelve a mandar todo lo que ya paso: se arranca de cero.
       this.partidos.set([]);
