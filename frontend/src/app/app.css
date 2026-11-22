@@ -1,6 +1,6 @@
 :host { display: block; min-height: 100vh; }
 
-.dashboard { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+.dashboard { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
 
 /* ---- Lista de partidos (izquierda) ---- */
 .lista { background: var(--panel); border-right: 1px solid var(--borde); overflow-y: auto; }
@@ -28,7 +28,7 @@
 @keyframes latido { 50% { opacity: .55; } }
 
 /* ---- Detalle (derecha) ---- */
-.detalle { padding: 28px 32px; min-width: 0; }
+.detalle { padding: 28px 32px; min-width: 0; overflow-y: auto; }
 .cabecera { text-align: center; }
 .cabecera h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .resumen { font-size: 1.2rem; font-variant-numeric: tabular-nums; font-weight: 700; margin: 12px 0 0; }
@@ -68,7 +68,7 @@
 
 /* ---- Celular: la lista va arriba ---- */
 @media (max-width: 820px) {
-  .dashboard { grid-template-columns: 1fr; }
+  .dashboard { grid-template-columns: 1fr; height: auto; }
   .lista { border-right: 0; border-bottom: 1px solid var(--borde); max-height: 45vh; }
   .detalle { padding: 20px 16px; }
   .equipo .escudo { height: 64px; width: 56px; }
