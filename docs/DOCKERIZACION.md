@@ -103,6 +103,6 @@ El escenario de prueba de punta a punta es el del enunciado: un gol que se anula
 
 ## 8. Limitaciones a tener en cuenta
 
-- **Solo fútbol está conectado de punta a punta.** El dominio de baloncesto y voleibol existe en `common-domain` (con sus pruebas), pero ningún microservicio los consume todavía — `live_feed_producer` solo genera eventos de fútbol. Esto es una decisión de alcance documentada desde el principio (fútbol completo es lo obligatorio; baloncesto/voleibol quedaron en el dominio como demostración de la herencia).
+- **El sistema cubre solo fútbol.** El dominio de baloncesto y voleibol se eliminó: es una decisión de alcance para enfocar el proyecto únicamente en fútbol.
 - El estado de "apuestas abiertas/suspendidas" de `betting_worker` vive en memoria, por servicio — no hay un store compartido entre réplicas. Es una simplificación consciente para mantener el alcance del proyecto razonable.
 - No hay script de inicialización de datos ni `pt_*`/seed data: todo arranca vacío y se va llenando con los eventos simulados.
