@@ -13,9 +13,9 @@
 
   @if (partidos().length > 0) {
     <section class="partidos" aria-label="Partidos en vivo">
-      @for (partido of partidos(); track partido.matchId) {
+      @for (partido of partidos(); track partido.match_id) {
         <article class="partido">
-          <p class="id-partido">Partido {{ partido.matchId }}</p>
+          <p class="id-partido">Partido {{ partido.match_id }}</p>
           <div class="marcador" aria-label="Marcador">
             <span>{{ partido.local }}</span><b>—</b><span>{{ partido.visitante }}</span>
           </div>
