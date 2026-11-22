@@ -1,6 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 
+type EstadoPartido = 'POR_JUGAR' | 'EN_JUEGO' | 'EN_REVISION' | 'ENTRETIEMPO' | 'FINALIZADO';
+
 /** Lo que manda dashboard_backend cuando cambia el marcador (ActualizacionMarcadorDto). */
 interface Marcador {
   match_id: string;
@@ -8,7 +10,11 @@ interface Marcador {
   visitante: number;
   minuto: number;
   minuto_extra: number;
-  estado: 'POR_JUGAR' | 'EN_JUEGO' | 'EN_REVISION' | 'FINALIZADO';
+  estado: EstadoPartido;
+  equipo_local: string | null;
+  equipo_visitante: string | null;
+  faltas_local: number;
+  faltas_visitante: number;
 }
 
 /** Lo que manda dashboard_backend por cada evento del partido (AlertaPartidoDto). */
@@ -18,6 +24,7 @@ interface EventoPartido {
   event_type: string;
   team: 'home' | 'away' | null;
   annuls_event_id: string | null;
+  reviews_event_id: string | null;
   minuto: number;
   minuto_extra: number;
   mensaje: string;
@@ -42,6 +49,14 @@ interface FilaLineaDeTiempo {
   anulado: boolean;
 }
 
+const ETIQUETA_ESTADO: Record<EstadoPartido, string> = {
+  POR_JUGAR: 'Por jugar',
+  EN_JUEGO: 'En juego',
+  EN_REVISION: 'Revisión VAR',
+  ENTRETIEMPO: 'Entretiempo',
+  FINALIZADO: 'Finalizado',
+};
+
 @Component({
   selector: 'app-root',
   imports: [NgTemplateOutlet],
@@ -60,7 +75,7 @@ export class App implements OnInit, OnDestroy {
 
   protected readonly lineaDeTiempo = computed(() => {
     const partido = this.partidoSeleccionado();
-    return partido ? partido.eventos.map((evento) => this.describir(evento, partido.eventos)) : [];
+    return partido ? partido.eventos.map((evento) => this.describir(evento, partido)) : [];
   });
 
   private socket?: WebSocket;
@@ -85,6 +100,33 @@ export class App implements OnInit, OnDestroy {
 
   protected minutoTexto(minuto: number, minutoExtra: number): string {
     return minutoExtra ? `${minuto}+${minutoExtra}'` : `${minuto}'`;
+  }
+
+  protected nombreLocal(marcador: Marcador): string {
+    return marcador.equipo_local || 'Local';
+  }
+
+  protected nombreVisitante(marcador: Marcador): string {
+    return marcador.equipo_visitante || 'Visitante';
+  }
+
+  protected titulo(marcador: Marcador): string {
+    return marcador.equipo_local && marcador.equipo_visitante
+      ? `${marcador.equipo_local} vs ${marcador.equipo_visitante}`
+      : `Partido ${marcador.match_id}`;
+  }
+
+  /** "Atlético Nacional" -> "ATL" */
+  protected abreviatura(nombre: string): string {
+    return nombre.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+  }
+
+  protected etiquetaEstado(estado: EstadoPartido): string {
+    return ETIQUETA_ESTADO[estado] ?? estado;
+  }
+
+  protected claseEstado(estado: EstadoPartido): string {
+    return { POR_JUGAR: 'por-jugar', EN_JUEGO: 'en-juego', EN_REVISION: 'revision', ENTRETIEMPO: 'entretiempo', FINALIZADO: 'finalizado' }[estado] ?? '';
   }
 
   private conectar(): void {
@@ -126,40 +168,59 @@ export class App implements OnInit, OnDestroy {
       p.marcador.match_id === evento.match_id ? { ...p, eventos: [...p.eventos, evento] } : p));
   }
 
-  private describir(evento: EventoPartido, eventos: EventoPartido[]): FilaLineaDeTiempo {
-    const minuto = this.minutoTexto(evento.minuto, evento.minuto_extra);
-    const equipo = evento.team === 'home' ? 'local' : evento.team === 'away' ? 'visitante' : null;
+  private nombreDe(team: string | null, marcador: Marcador): string {
+    if (team === 'home') return this.nombreLocal(marcador);
+    if (team === 'away') return this.nombreVisitante(marcador);
+    return '';
+  }
+
+  /** "el gol de Nacional del 38'" a partir del id de un gol o una falta. */
+  private jugada(eventId: string | null, partido: Partido): string {
+    const evento = partido.eventos.find((e) => e.event_id === eventId);
+    if (!evento) return 'la jugada';
+    const que = evento.event_type === 'GOAL' ? 'el gol' : 'la falta';
+    return `${que} de ${this.nombreDe(evento.team, partido.marcador)} del ${this.minutoTexto(evento.minuto, evento.minuto_extra)}`;
+  }
+
+  private fila(evento: EventoPartido, icono: string, clase: string, titulo: string, descripcion: string, anulado = false): FilaLineaDeTiempo {
+    return { minuto: this.minutoTexto(evento.minuto, evento.minuto_extra), icono, clase, titulo, descripcion, anulado };
+  }
+
+  private describir(evento: EventoPartido, partido: Partido): FilaLineaDeTiempo {
+    const equipo = this.nombreDe(evento.team, partido.marcador);
+    const fueAnulado = partido.eventos.some((e) => e.annuls_event_id && e.annuls_event_id === evento.event_id);
 
     switch (evento.event_type) {
       case 'MATCH_STARTED':
-        return { minuto, icono: '▶', clase: 'inicio', titulo: 'Comienza el partido', descripcion: 'El reloj empieza a correr.', anulado: false };
+        return this.fila(evento, '▶', 'inicio', 'Comienza el partido', 'El reloj empieza a correr.');
+      case 'HALF_TIME':
+        return this.fila(evento, '⏸', 'inicio', 'Entretiempo', 'Termina el primer tiempo.');
+      case 'SECOND_HALF_STARTED':
+        return this.fila(evento, '▶', 'inicio', 'Comienza el segundo tiempo', 'El reloj vuelve a correr.');
       case 'MATCH_ENDED':
-        return { minuto, icono: '■', clase: 'final', titulo: 'Final del partido', descripcion: 'El árbitro pita el final.', anulado: false };
-      case 'GOAL': {
-        const anulado = eventos.some((e) => e.event_type === 'GOAL_ANNULLED' && e.annuls_event_id === evento.event_id);
-        return { minuto, icono: '⚽', clase: 'gol', titulo: anulado ? 'Gol (anulado)' : 'Gol',
-          descripcion: `Gol del equipo ${equipo}.`, anulado };
-      }
-      case 'GOAL_ANNULLED': {
-        const gol = eventos.find((e) => e.event_type === 'GOAL' && e.event_id === evento.annuls_event_id);
-        const detalle = gol
-          ? `Se anula el gol del ${gol.team === 'home' ? 'local' : 'visitante'} del minuto ${this.minutoTexto(gol.minuto, gol.minuto_extra)}.`
-          : 'Se anula el gol.';
-        return { minuto, icono: '✕', clase: 'anulacion', titulo: 'Gol anulado por el VAR', descripcion: detalle, anulado: false };
-      }
-      case 'VAR_CHECK':
-        return { minuto, icono: 'VAR', clase: 'revision', titulo: 'Revisión VAR',
-          descripcion: 'El árbitro revisa la jugada. Apuestas suspendidas.', anulado: false };
-      case 'MATCH_CONTINUES':
-        return { minuto, icono: '✓', clase: 'confirmada', titulo: 'El VAR confirma la jugada',
-          descripcion: 'El partido sigue. Apuestas reanudadas.', anulado: false };
+        return this.fila(evento, '■', 'final', 'Final del partido', 'El árbitro pita el final.');
+      case 'GOAL':
+        return this.fila(evento, '⚽', 'gol', fueAnulado ? 'Gol (anulado)' : 'Gol', `Gol de ${equipo}.`, fueAnulado);
       case 'FOUL':
-        return { minuto, icono: '!', clase: 'falta', titulo: 'Falta',
-          descripcion: equipo ? `Falta del equipo ${equipo}.` : 'Falta.', anulado: false };
+        return this.fila(evento, '!', 'falta', fueAnulado ? 'Falta (anulada)' : 'Falta', `Falta de ${equipo}.`, fueAnulado);
+      case 'YELLOW_CARD':
+        return this.fila(evento, '', 'amarilla', 'Tarjeta amarilla', `Amonestación para ${equipo}.`);
+      case 'RED_CARD':
+        return this.fila(evento, '', 'roja', 'Tarjeta roja', `Expulsión para ${equipo}.`);
+      case 'VAR_CHECK':
+        return this.fila(evento, 'VAR', 'revision', 'Revisión VAR',
+          `Se revisa ${this.jugada(evento.reviews_event_id, partido)}. Apuestas suspendidas.`);
+      case 'MATCH_CONTINUES':
+        return this.fila(evento, '✓', 'confirmada', 'El VAR confirma la jugada',
+          `Se mantiene ${this.jugada(evento.reviews_event_id, partido)}. El partido sigue.`);
+      case 'GOAL_ANNULLED':
+        return this.fila(evento, '✕', 'anulacion', 'Gol anulado por el VAR', `Se anula ${this.jugada(evento.annuls_event_id, partido)}.`);
+      case 'FOUL_ANNULLED':
+        return this.fila(evento, '✕', 'anulacion', 'Falta anulada por el VAR', `Se anula ${this.jugada(evento.annuls_event_id, partido)}.`);
       case 'ADDED_TIME':
-        return { minuto, icono: '+', clase: 'tiempo', titulo: 'Tiempo añadido', descripcion: `${evento.mensaje}.`, anulado: false };
+        return this.fila(evento, '+', 'tiempo', 'Tiempo añadido', `${evento.mensaje}.`);
       default:
-        return { minuto, icono: '•', clase: 'otro', titulo: evento.event_type, descripcion: evento.mensaje, anulado: false };
+        return this.fila(evento, '•', 'otro', evento.event_type, evento.mensaje);
     }
   }
 }

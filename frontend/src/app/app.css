@@ -24,6 +24,7 @@
 .insignia { border: 1px solid; border-radius: 999px; font-size: .78rem; font-weight: 700; padding: 2px 10px; white-space: nowrap; }
 .insignia.en-juego { background: var(--verde-fondo); border-color: var(--verde); color: var(--verde-texto); }
 .insignia.revision { animation: latido 1.4s ease-in-out infinite; background: var(--ambar-fondo); border-color: var(--ambar); color: var(--ambar-texto); }
+.insignia.entretiempo { background: #dbeafe; border-color: #3b82f6; color: #1e40af; }
 .insignia.por-jugar, .insignia.finalizado { background: var(--hover); border-color: var(--borde-fuerte); color: var(--texto-suave); }
 .insignia.grande { font-size: 1.05rem; padding: 6px 22px; }
 @keyframes latido { 50% { opacity: .55; } }
@@ -39,6 +40,9 @@
 .equipo .escudo { height: 110px; width: 96px; }
 .marcador { font-size: clamp(3rem, 8vw, 5rem); font-variant-numeric: tabular-nums; font-weight: 900; letter-spacing: .04em; }
 .marcador.en-revision { color: var(--ambar-texto); }
+.estadistica { align-items: center; display: flex; gap: 18px; justify-content: center; margin-top: 10px; }
+.estadistica span { font-size: 1.2rem; font-variant-numeric: tabular-nums; font-weight: 800; min-width: 24px; }
+.estadistica b { color: var(--texto-suave); font-size: .85rem; font-weight: 600; text-transform: uppercase; }
 .escudo path { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linejoin: round; }
 
 .aviso-revision { background: var(--ambar-fondo); border: 1px solid var(--ambar); border-radius: 10px; color: var(--ambar-texto); font-weight: 600; margin: 24px auto 0; max-width: 880px; padding: 12px 16px; text-align: center; }
@@ -54,6 +58,10 @@
 .fila-icono.gol { background: var(--verde-fondo); }
 .fila-icono.falta { background: #fde2e2; color: #b91c1c; }
 .fila-icono.revision { background: var(--ambar-fondo); color: var(--ambar-texto); font-size: .8rem; }
+.fila-icono.amarilla, .fila-icono.roja { background: var(--hover); }
+.fila-icono.amarilla::after, .fila-icono.roja::after { border-radius: 3px; content: ""; height: 26px; width: 19px; }
+.fila-icono.amarilla::after { background: #facc15; }
+.fila-icono.roja::after { background: #dc2626; }
 .fila-icono.confirmada { background: #dbeafe; color: #1d4ed8; }
 .fila-icono.anulacion { background: #fde2e2; color: #b91c1c; }
 .fila-icono.tiempo, .fila-icono.otro, .fila-icono.inicio, .fila-icono.final { background: var(--hover); }

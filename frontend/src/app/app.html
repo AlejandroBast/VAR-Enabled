@@ -15,45 +15,27 @@
       <button type="button" class="tarjeta"
               [class.seleccionada]="partido === partidoSeleccionado()"
               (click)="seleccionar(partido.marcador.match_id)">
-        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />LOC</span>
+        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
         <span class="centro">
-          @if (partido.marcador.estado === 'EN_REVISION') {
-            <span class="insignia revision">Revisión VAR</span>
-          } @else if (partido.marcador.estado === 'FINALIZADO') {
-            <span class="insignia finalizado">Finalizado</span>
-          } @else if (partido.marcador.estado === 'POR_JUGAR') {
-            <span class="insignia por-jugar">Por jugar</span>
-          } @else {
-            <span class="insignia en-juego">En juego</span>
-          }
-          @if (partido.marcador.estado === 'POR_JUGAR') {
-            <span class="minuto">--</span>
-          } @else {
-            <span class="minuto">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
-          }
+          <span [class]="'insignia ' + claseEstado(partido.marcador.estado)">{{ etiquetaEstado(partido.marcador.estado) }}</span>
+          <span class="minuto">{{ partido.marcador.estado === 'POR_JUGAR' ? '--' : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
           <span class="marcador-mini">{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
-          <span class="id">Partido {{ partido.marcador.match_id }}</span>
+          <span class="id">{{ titulo(partido.marcador) }}</span>
         </span>
-        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />VIS</span>
+        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
       </button>
     } @empty {
-      <p class="lista-vacia">Aún no hay partidos en vivo.</p>
+      <p class="lista-vacia">Aún no hay partidos.</p>
     }
   </aside>
 
   <section class="detalle">
     @if (partidoSeleccionado(); as partido) {
       <header class="cabecera">
-        <h2>Partido {{ partido.marcador.match_id }}</h2>
-        @if (partido.marcador.estado === 'EN_REVISION') {
-          <span class="insignia grande revision">Revisión VAR en curso</span>
-        } @else if (partido.marcador.estado === 'FINALIZADO') {
-          <span class="insignia grande finalizado">Finalizado</span>
-        } @else if (partido.marcador.estado === 'POR_JUGAR') {
-          <span class="insignia grande por-jugar">Por jugar</span>
-        } @else {
-          <span class="insignia grande en-juego">En juego</span>
-        }
+        <h2>{{ titulo(partido.marcador) }}</h2>
+        <span [class]="'insignia grande ' + claseEstado(partido.marcador.estado)">
+          {{ partido.marcador.estado === 'EN_REVISION' ? 'Revisión VAR en curso' : etiquetaEstado(partido.marcador.estado) }}
+        </span>
         @if (partido.marcador.estado === 'POR_JUGAR') {
           <p class="resumen">El partido todavía no empieza</p>
         } @else {
@@ -61,11 +43,17 @@
         }
 
         <div class="enfrentamiento">
-          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>Local</span></div>
+          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>{{ nombreLocal(partido.marcador) }}</span></div>
           <div class="marcador" [class.en-revision]="partido.marcador.estado === 'EN_REVISION'">
             {{ partido.marcador.local }} - {{ partido.marcador.visitante }}
           </div>
-          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>Visitante</span></div>
+          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>{{ nombreVisitante(partido.marcador) }}</span></div>
+        </div>
+
+        <div class="estadistica">
+          <span>{{ partido.marcador.faltas_local }}</span>
+          <b>Faltas</b>
+          <span>{{ partido.marcador.faltas_visitante }}</span>
         </div>
       </header>
 
@@ -91,7 +79,7 @@
     } @else {
       <div class="vacio" aria-live="polite">
         <h2>Esperando partidos</h2>
-        <p>Cuando llegue el primer evento de un partido, aparecerá aquí automáticamente.</p>
+        <p>Cuando se cree un partido, aparecerá aquí automáticamente.</p>
         @if (!conectado()) { <button type="button" class="reintentar" (click)="reconectar()">Reintentar conexión</button> }
       </div>
     }
