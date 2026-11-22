@@ -1,5 +1,7 @@
 package com.varenabled.dashboardbackend;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.varenabled.contratos.ActualizacionMarcadorDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +26,15 @@ class MarcadorWebSocketHandlerTest {
     @Mock
     private WebSocketSession sesionB;
 
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final ActualizacionMarcadorDto marcador = new ActualizacionMarcadorDto("123", 1, 0, 23, 0, "EN_JUEGO");
+    private EstadoDashboard estado;
     private MarcadorWebSocketHandler handler;
 
     @BeforeEach
     void preparar() {
-        handler = new MarcadorWebSocketHandler();
+        estado = new EstadoDashboard();
+        handler = new MarcadorWebSocketHandler(estado, mapper);
         lenient().when(sesionA.isOpen()).thenReturn(true);
         lenient().when(sesionB.isOpen()).thenReturn(true);
     }
@@ -38,10 +44,22 @@ class MarcadorWebSocketHandlerTest {
         handler.afterConnectionEstablished(sesionA);
         handler.afterConnectionEstablished(sesionB);
 
-        handler.transmitir("{\"matchId\":\"123\"}");
+        MensajeDashboard mensaje = new MensajeDashboard(MensajeDashboard.MARCADOR, marcador);
+        handler.transmitir(mensaje);
 
-        verify(sesionA).sendMessage(new TextMessage("{\"matchId\":\"123\"}"));
-        verify(sesionB).sendMessage(new TextMessage("{\"matchId\":\"123\"}"));
+        TextMessage esperado = new TextMessage(mapper.writeValueAsString(mensaje));
+        verify(sesionA).sendMessage(esperado);
+        verify(sesionB).sendMessage(esperado);
+    }
+
+    @Test
+    void alConectarseLeEnviaLoQueYaPasoEnLosPartidos() throws IOException {
+        estado.registrarMarcador(marcador);
+
+        handler.afterConnectionEstablished(sesionA);
+
+        MensajeDashboard mensaje = new MensajeDashboard(MensajeDashboard.MARCADOR, marcador);
+        verify(sesionA).sendMessage(new TextMessage(mapper.writeValueAsString(mensaje)));
     }
 
     @Test
@@ -49,7 +67,7 @@ class MarcadorWebSocketHandlerTest {
         handler.afterConnectionEstablished(sesionA);
         handler.afterConnectionClosed(sesionA, null);
 
-        handler.transmitir("{\"matchId\":\"123\"}");
+        handler.transmitir(new MensajeDashboard(MensajeDashboard.MARCADOR, marcador));
 
         verify(sesionA, never()).sendMessage(any());
     }

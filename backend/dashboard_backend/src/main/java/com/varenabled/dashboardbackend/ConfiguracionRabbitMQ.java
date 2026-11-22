@@ -3,6 +3,7 @@ package com.varenabled.dashboardbackend;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -17,6 +18,9 @@ public class ConfiguracionRabbitMQ {
     public static final String COLA_MARCADOR = "dashboard_backend.marcador";
     public static final String PATRON_ROUTING_KEY = "score.*";
 
+    public static final String EXCHANGE_ALERTAS = "live_alerts";
+    public static final String COLA_ALERTAS = "dashboard_backend.alertas";
+
     @Bean
     public TopicExchange exchangeMarcador() {
         return new TopicExchange(EXCHANGE_MARCADOR);
@@ -30,6 +34,21 @@ public class ConfiguracionRabbitMQ {
     @Bean
     public Binding bindingMarcador(Queue colaMarcador, TopicExchange exchangeMarcador) {
         return BindingBuilder.bind(colaMarcador).to(exchangeMarcador).with(PATRON_ROUTING_KEY);
+    }
+
+    @Bean
+    public FanoutExchange exchangeAlertas() {
+        return new FanoutExchange(EXCHANGE_ALERTAS);
+    }
+
+    @Bean
+    public Queue colaAlertas() {
+        return new Queue(COLA_ALERTAS, true);
+    }
+
+    @Bean
+    public Binding bindingAlertas(Queue colaAlertas, FanoutExchange exchangeAlertas) {
+        return BindingBuilder.bind(colaAlertas).to(exchangeAlertas);
     }
 
     @Bean

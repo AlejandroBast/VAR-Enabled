@@ -1,12 +1,12 @@
 package com.varenabled.dashboardbackend;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.varenabled.contratos.ActualizacionMarcadorDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -18,16 +18,15 @@ class EscuchaMarcadorTest {
     private MarcadorWebSocketHandler handler;
 
     @Test
-    void transmiteLaActualizacionDelMarcadorComoJson() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        EscuchaMarcador listener = new EscuchaMarcador(handler, mapper);
+    void transmiteElMarcadorYLoGuardaParaLosQueSeConectenDespues() {
+        EstadoDashboard estado = new EstadoDashboard();
+        EscuchaMarcador listener = new EscuchaMarcador(handler, estado);
         ActualizacionMarcadorDto actualizacion = new ActualizacionMarcadorDto("123", 1, 0, 23, 0, "EN_JUEGO");
 
         listener.escuchar(actualizacion);
 
-        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(handler).transmitir(captor.capture());
-        ActualizacionMarcadorDto reconstruido = mapper.readValue(captor.getValue(), ActualizacionMarcadorDto.class);
-        assertEquals(actualizacion, reconstruido);
+        MensajeDashboard esperado = new MensajeDashboard(MensajeDashboard.MARCADOR, actualizacion);
+        verify(handler).transmitir(esperado);
+        assertEquals(List.of(esperado), estado.mensajesActuales());
     }
 }

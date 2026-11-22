@@ -1,7 +1,5 @@
 package com.varenabled.dashboardbackend;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.varenabled.contratos.ActualizacionMarcadorDto;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -10,15 +8,16 @@ import org.springframework.stereotype.Component;
 public class EscuchaMarcador {
 
     private final MarcadorWebSocketHandler handler;
-    private final ObjectMapper objectMapper;
+    private final EstadoDashboard estado;
 
-    public EscuchaMarcador(MarcadorWebSocketHandler handler, ObjectMapper objectMapper) {
+    public EscuchaMarcador(MarcadorWebSocketHandler handler, EstadoDashboard estado) {
         this.handler = handler;
-        this.objectMapper = objectMapper;
+        this.estado = estado;
     }
 
     @RabbitListener(queues = ConfiguracionRabbitMQ.COLA_MARCADOR)
-    public void escuchar(ActualizacionMarcadorDto actualizacion) throws JsonProcessingException {
-        handler.transmitir(objectMapper.writeValueAsString(actualizacion));
+    public void escuchar(ActualizacionMarcadorDto actualizacion) {
+        estado.registrarMarcador(actualizacion);
+        handler.transmitir(new MensajeDashboard(MensajeDashboard.MARCADOR, actualizacion));
     }
 }
