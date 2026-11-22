@@ -32,8 +32,10 @@ public class ConfiguracionRabbitMQ {
     }
 
     @Bean
-    public Binding bindingMarcador(Queue colaMarcador, TopicExchange exchangeMarcador) {
-        return BindingBuilder.bind(colaMarcador).to(exchangeMarcador).with(PATRON_ROUTING_KEY);
+    public Binding bindingMarcador() {
+        // Se llama a los metodos directamente: con dos colas, Spring no puede elegir por nombre
+        // de parametro porque el proyecto no compila con -parameters.
+        return BindingBuilder.bind(colaMarcador()).to(exchangeMarcador()).with(PATRON_ROUTING_KEY);
     }
 
     @Bean
@@ -47,8 +49,8 @@ public class ConfiguracionRabbitMQ {
     }
 
     @Bean
-    public Binding bindingAlertas(Queue colaAlertas, FanoutExchange exchangeAlertas) {
-        return BindingBuilder.bind(colaAlertas).to(exchangeAlertas);
+    public Binding bindingAlertas() {
+        return BindingBuilder.bind(colaAlertas()).to(exchangeAlertas());
     }
 
     @Bean
