@@ -23,10 +23,11 @@ public class GestorPartidos {
 
     private static final String TOPICO = "match_events";
     private static final String TIEMPO_ANADIDO = "ADDED_TIME";
+    private static final String CREACION = "MATCH_CREATED";
     private static final String INICIO = "MATCH_STARTED";
     private static final String AVANCE_RELOJ = "CLOCK_TICK";
     private static final String FINAL = "MATCH_ENDED";
-    private static final Set<String> EVENTOS_DEL_RELOJ = Set.of(INICIO, AVANCE_RELOJ, FINAL);
+    private static final Set<String> EVENTOS_DEL_RELOJ = Set.of(CREACION, INICIO, AVANCE_RELOJ, FINAL);
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Clock reloj;
@@ -40,8 +41,18 @@ public class GestorPartidos {
         this.duracionMinuto = Duration.ofSeconds(segundosPorMinuto);
     }
 
+    /** Avisa por Kafka que el partido existe (sin minuto todavia), para que el dashboard lo muestre "por jugar". */
     public void crearPartido(String matchId) {
-        partidos.putIfAbsent(matchId, new PartidoEnVivo());
+        PartidoEnVivo nuevo = new PartidoEnVivo();
+        if (partidos.putIfAbsent(matchId, nuevo) != null) {
+            return;
+        }
+        synchronized (nuevo) {
+            EventoPartidoDto creacion = new EventoPartidoDto(matchId, "FOOTBALL", CREACION, null, idUnico(CREACION),
+                    null, null, null, null, reloj.instant());
+            kafkaTemplate.send(TOPICO, matchId, creacion);
+            nuevo.historial.add(creacion);
+        }
     }
 
     public List<ResumenPartido> listarPartidos() {
@@ -152,6 +163,7 @@ public class GestorPartidos {
             case "GOAL_ANNULLED" -> "a";
             case "MATCH_CONTINUES" -> "c";
             case TIEMPO_ANADIDO -> "t";
+            case CREACION -> "n";
             case INICIO -> "i";
             case AVANCE_RELOJ -> "r";
             case FINAL -> "fin";

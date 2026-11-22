@@ -77,11 +77,22 @@ class GestorPartidosTest {
     }
 
     @Test
-    void crearElMismoPartidoDosVecesNoLoDuplica() {
+    void crearElMismoPartidoDosVecesNoLoDuplicaNiLoVuelveAAvisar() {
         gestor.crearPartido("101");
         gestor.crearPartido("101");
 
         assertEquals(1, gestor.listarPartidos().size());
+        verify(kafkaTemplate, times(1)).send(eq("match_events"), eq("101"), any());
+    }
+
+    @Test
+    void crearUnPartidoAvisaPorKafkaQueEstaPorJugarSinMinuto() {
+        gestor.crearPartido("101");
+
+        EventoPartidoDto creacion = gestor.listarEventos("101").get(0);
+        assertEquals("MATCH_CREATED", creacion.eventType());
+        assertNull(creacion.minuto());
+        verify(kafkaTemplate).send(eq("match_events"), eq("101"), eq(creacion));
     }
 
     @Test
@@ -158,11 +169,12 @@ class GestorPartidosTest {
     @Test
     void losEventosQuedanEnElHistorialEnOrden() {
         gestor.crearPartido("101");
+        EventoPartidoDto creacion = gestor.listarEventos("101").get(0);
         EventoPartidoDto inicio = gestor.iniciarPartido("101");
         EventoPartidoDto gol = gestor.registrarEvento("101", "GOAL", "home", null, null);
         EventoPartidoDto check = gestor.registrarEvento("101", "VAR_CHECK", null, null, null);
 
-        assertEquals(List.of(inicio, gol, check), gestor.listarEventos("101"));
+        assertEquals(List.of(creacion, inicio, gol, check), gestor.listarEventos("101"));
     }
 
     @Test
@@ -225,8 +237,8 @@ class GestorPartidosTest {
 
         gestor.avanzarRelojes();
 
-        // Solo el MATCH_STARTED, ningun CLOCK_TICK.
-        verify(kafkaTemplate, times(1)).send(eq("match_events"), eq("101"), any());
+        // Solo MATCH_CREATED y MATCH_STARTED, ningun CLOCK_TICK.
+        verify(kafkaTemplate, times(2)).send(eq("match_events"), eq("101"), any());
     }
 
     @Test
