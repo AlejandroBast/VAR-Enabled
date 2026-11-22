@@ -5,6 +5,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,14 +40,14 @@ public class GeneradorEventosFutbol {
 
     private void enviarGol() {
         String idEvento = "evt_g" + contadorDeGoles.incrementAndGet();
-        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL", "home", idEvento, null, null);
+        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL", "home", idEvento, null, null, Instant.now());
 
         kafkaTemplate.send(TOPICO, ID_PARTIDO, evento);
         idUltimoGolSinAnular = idEvento;
     }
 
     private void enviarGolAnulado() {
-        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL_ANNULLED", null, null, idUltimoGolSinAnular, null);
+        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL_ANNULLED", null, null, idUltimoGolSinAnular, null, Instant.now());
 
         kafkaTemplate.send(TOPICO, ID_PARTIDO, evento);
         idUltimoGolSinAnular = null;

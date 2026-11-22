@@ -14,6 +14,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,8 +37,8 @@ class EscuchaEventosPartidoTest {
     void unGolAnuladoDejaElMarcadorEnCero() throws InterruptedException {
         // Arrange
         IdPartido idPartido = new IdPartido("123");
-        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g123", null, null);
-        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g123", null);
+        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g123", null, null, Instant.now());
+        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g123", null, Instant.now());
 
         // Act
         kafkaTemplate.send("match_events", "123", gol);

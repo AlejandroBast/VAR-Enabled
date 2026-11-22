@@ -1,5 +1,7 @@
 package com.varenabled.contratos;
 
+import java.time.Instant;
+
 public record EventoPartidoDto(
         String matchId,
         String sport,
@@ -7,7 +9,8 @@ public record EventoPartidoDto(
         String team,
         String eventId,
         String annulsEventId,
-        Integer points
+        Integer points,
+        Instant timestamp
 ) {
 
     public EventoPartidoDto {
