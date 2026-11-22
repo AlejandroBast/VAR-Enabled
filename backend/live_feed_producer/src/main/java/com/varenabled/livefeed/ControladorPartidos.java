@@ -2,6 +2,7 @@ package com.varenabled.livefeed;
 
 import com.varenabled.contratos.EventoPartidoDto;
 import com.varenabled.dominio.futbol.MinutoInvalidoException;
+import com.varenabled.dominio.futbol.ReglaPartidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,13 +32,18 @@ public class ControladorPartidos {
             throw new IllegalArgumentException("El matchId no puede ser nulo ni vacio");
         }
 
-        gestor.crearPartido(request.matchId());
+        gestor.crearPartido(request.matchId(), request.homeTeam(), request.awayTeam());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("matchId", request.matchId()));
     }
 
     @PostMapping("/{matchId}/iniciar")
     public EventoPartidoDto iniciarPartido(@PathVariable("matchId") String matchId) {
         return gestor.iniciarPartido(matchId);
+    }
+
+    @PostMapping("/{matchId}/segundo-tiempo")
+    public EventoPartidoDto iniciarSegundoTiempo(@PathVariable("matchId") String matchId) {
+        return gestor.iniciarSegundoTiempo(matchId);
     }
 
     @GetMapping("/{matchId}/eventos")
@@ -47,8 +53,8 @@ public class ControladorPartidos {
 
     @PostMapping("/{matchId}/eventos")
     public ResponseEntity<EventoPartidoDto> crearEvento(@PathVariable("matchId") String matchId, @RequestBody CrearEventoRequest request) {
-        EventoPartidoDto evento = gestor.registrarEvento(
-                matchId, request.eventType(), request.team(), request.annulsEventId(), request.minutosAgregados());
+        EventoPartidoDto evento = gestor.registrarEvento(matchId, request.eventType(), request.team(),
+                request.annulsEventId(), request.reviewsEventId(), request.minutosAgregados());
         return ResponseEntity.status(HttpStatus.CREATED).body(evento);
     }
 
@@ -62,8 +68,9 @@ public class ControladorPartidos {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> manejarEstadoDelPartido(IllegalStateException ex) {
+    /** El evento esta bien formado pero no se puede aplicar ahora (partido sin empezar, revision fuera de tiempo, etc.). */
+    @ExceptionHandler({IllegalStateException.class, ReglaPartidoException.class})
+    public ResponseEntity<Map<String, String>> manejarEstadoDelPartido(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 }

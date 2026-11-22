@@ -46,7 +46,7 @@ class ControladorPartidosTest {
                         .content("{\"match_id\":\"101\"}"))
                 .andExpect(status().isCreated());
 
-        verify(gestor).crearPartido("101");
+        verify(gestor).crearPartido("101", null, null);
     }
 
     @Test
@@ -60,8 +60,8 @@ class ControladorPartidosTest {
     @Test
     void listarPartidosDevuelveSuEstadoYMinuto() throws Exception {
         when(gestor.listarPartidos()).thenReturn(List.of(
-                new ResumenPartido("101", "EN_JUEGO", 23, 0),
-                new ResumenPartido("202", "POR_JUGAR", null, null)));
+                new ResumenPartido("101", null, null, "EN_JUEGO", 23, 0, null, List.of()),
+                new ResumenPartido("202", null, null, "POR_JUGAR", null, null, null, List.of())));
 
         mockMvc.perform(get("/api/partidos"))
                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ class ControladorPartidosTest {
     @Test
     void crearUnEventoSinMinutoDevuelve201ConElMinutoDelReloj() throws Exception {
         EventoPartidoDto evento = new EventoPartidoDto("101", "FOOTBALL", "GOAL", "home", "evt_g_abc123", null, 23, 0, null, Instant.now());
-        when(gestor.registrarEvento("101", "GOAL", "home", null, null)).thenReturn(evento);
+        when(gestor.registrarEvento("101", "GOAL", "home", null, null, null)).thenReturn(evento);
 
         mockMvc.perform(post("/api/partidos/101/eventos")
                         .contentType("application/json")
@@ -101,7 +101,7 @@ class ControladorPartidosTest {
 
     @Test
     void crearUnEventoParaUnPartidoInexistenteDevuelve404() throws Exception {
-        when(gestor.registrarEvento(eq("999"), any(), any(), any(), any()))
+        when(gestor.registrarEvento(eq("999"), any(), any(), any(), any(), any()))
                 .thenThrow(new PartidoNoEncontradoException("999"));
 
         mockMvc.perform(post("/api/partidos/999/eventos")
@@ -112,7 +112,7 @@ class ControladorPartidosTest {
 
     @Test
     void crearUnEventoEnUnPartidoQueNoEmpezoDevuelve409() throws Exception {
-        when(gestor.registrarEvento(eq("101"), any(), any(), any(), any()))
+        when(gestor.registrarEvento(eq("101"), any(), any(), any(), any(), any()))
                 .thenThrow(new IllegalStateException("El partido 101 todavía no empezó"));
 
         mockMvc.perform(post("/api/partidos/101/eventos")
@@ -123,12 +123,34 @@ class ControladorPartidosTest {
 
     @Test
     void anunciarTiempoAnadidoFueraDeLugarDevuelve400() throws Exception {
-        when(gestor.registrarEvento(eq("101"), any(), any(), any(), any()))
+        when(gestor.registrarEvento(eq("101"), any(), any(), any(), any(), any()))
                 .thenThrow(new MinutoInvalidoException("El tiempo añadido solo se puede anunciar durante el minuto 45 o el 90"));
 
         mockMvc.perform(post("/api/partidos/101/eventos")
                         .contentType("application/json")
                         .content("{\"event_type\":\"ADDED_TIME\",\"minutos_agregados\":3}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void revisarUnGolFueraDeSusDosMinutosDevuelve409() throws Exception {
+        when(gestor.registrarEvento(eq("101"), any(), any(), any(), any(), any()))
+                .thenThrow(new com.varenabled.dominio.futbol.ReglaPartidoException("Ya pasaron más de 2 minutos desde la jugada"));
+
+        mockMvc.perform(post("/api/partidos/101/eventos")
+                        .contentType("application/json")
+                        .content("{\"event_type\":\"VAR_CHECK\",\"reviews_event_id\":\"evt_g_1\"}"))
+                .andExpect(status().isConflict());
+        verify(gestor).registrarEvento("101", "VAR_CHECK", null, null, "evt_g_1", null);
+    }
+
+    @Test
+    void iniciarElSegundoTiempoDevuelveElEvento() throws Exception {
+        EventoPartidoDto segundo = new EventoPartidoDto("101", "FOOTBALL", "SECOND_HALF_STARTED", null, "evt_st_1", null, 46, 0, null, Instant.now());
+        when(gestor.iniciarSegundoTiempo("101")).thenReturn(segundo);
+
+        mockMvc.perform(post("/api/partidos/101/segundo-tiempo"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(segundo)));
     }
 }
