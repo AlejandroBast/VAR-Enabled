@@ -75,6 +75,22 @@
     cursor: pointer;
   }
   .chip.activo { border-color: var(--acento); color: var(--acento); }
+  .chip small { color: var(--texto-sutil); margin-left: 6px; }
+  .reloj {
+    align-items: center;
+    background: #0f1626;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 12px 16px;
+  }
+  .reloj .minuto { font-size: 2rem; font-variant-numeric: tabular-nums; font-weight: 800; }
+  .reloj .estado { color: var(--texto-sutil); }
+  .reloj button { margin-top: 0; }
+  button:disabled { cursor: not-allowed; opacity: .45; }
   #log {
     font-family: ui-monospace, Consolas, monospace;
     font-size: .82rem;
@@ -92,7 +108,7 @@
 <body>
 <main>
   <h1>VAR-Enabled · EventMaker</h1>
-  <p class="subtitulo">Crea partidos y dispara eventos a mano contra la API de <code>live_feed_producer</code>, para comprobar el flujo del VAR.</p>
+  <p class="subtitulo">Crea partidos, inícialos y dispara eventos en vivo contra la API de <code>live_feed_producer</code>. El minuto lo pone el reloj del partido, no se escribe a mano.</p>
 
   <section>
     <label for="apiBase">URL de la API</label>
@@ -111,7 +127,14 @@
 
     <label style="margin-top:18px">Partidos creados (clic para seleccionar)</label>
     <div id="listaPartidos" class="lista-partidos"></div>
-    <button id="btnRefrescarPartidos" class="secundario">Actualizar lista</button>
+
+    <div class="reloj">
+      <div>
+        <div class="minuto" id="relojMinuto">--</div>
+        <div class="estado" id="relojEstado">Seleccioná un partido</div>
+      </div>
+      <button id="btnIniciarPartido" disabled>Iniciar partido</button>
+    </div>
   </section>
 
   <section>
@@ -134,16 +157,8 @@
       </div>
     </div>
     <div class="fila">
-      <div>
-        <label for="minuto">Minuto (1-90)</label>
-        <input id="minuto" type="number" min="1" max="90" value="1">
-      </div>
-      <div id="campoMinutoExtra">
-        <label for="minutoExtra">Minuto extra (solo en el 45 o el 90)</label>
-        <input id="minutoExtra" type="number" min="0" max="10" value="0">
-      </div>
       <div id="campoMinutosAgregados" class="oculto">
-        <label for="minutosAgregados">Minutos a agregar (1-10)</label>
+        <label for="minutosAgregados">Minutos a agregar (1-10, solo durante el minuto 45 o el 90)</label>
         <input id="minutosAgregados" type="number" min="1" max="10" value="1">
       </div>
     </div>
@@ -172,6 +187,14 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let partidoSeleccionado = null;
+let partidosConocidos = [];
+
+const NOMBRE_ESTADO = { POR_JUGAR: 'Por jugar', EN_JUEGO: 'En juego', FINALIZADO: 'Finalizado' };
+
+function textoMinuto(partido) {
+  if (partido.minuto == null) return '--';
+  return partido.minuto_extra ? `${partido.minuto}+${partido.minuto_extra}'` : `${partido.minuto}'`;
+}
 
 function apiBase() { return $('apiBase').value.replace(/\/$/, ''); }
 
@@ -198,19 +221,36 @@ async function pedir(path, opciones) {
 
 async function refrescarPartidos() {
   try {
-    const partidos = await pedir('/api/partidos');
+    partidosConocidos = await pedir('/api/partidos');
     const contenedor = $('listaPartidos');
     contenedor.innerHTML = '';
-    partidos.forEach((matchId) => {
+    partidosConocidos.forEach((partido) => {
       const chip = document.createElement('div');
-      chip.className = 'chip' + (matchId === partidoSeleccionado ? ' activo' : '');
-      chip.textContent = matchId;
-      chip.onclick = () => seleccionarPartido(matchId);
+      chip.className = 'chip' + (partido.match_id === partidoSeleccionado ? ' activo' : '');
+      chip.textContent = partido.match_id;
+      const detalle = document.createElement('small');
+      detalle.textContent = partido.estado === 'EN_JUEGO' ? textoMinuto(partido) : NOMBRE_ESTADO[partido.estado];
+      chip.appendChild(detalle);
+      chip.onclick = () => seleccionarPartido(partido.match_id);
       contenedor.appendChild(chip);
     });
+    pintarReloj();
   } catch (error) {
-    registrar('No se pudo listar los partidos: ' + error.message, 'err');
+    $('relojEstado').textContent = 'No se pudo conectar con la API: ' + error.message;
   }
+}
+
+function pintarReloj() {
+  const partido = partidosConocidos.find((p) => p.match_id === partidoSeleccionado);
+  $('btnIniciarPartido').disabled = !partido || partido.estado !== 'POR_JUGAR';
+  $('btnEnviarEvento').disabled = !partido || partido.estado !== 'EN_JUEGO';
+  if (!partido) {
+    $('relojMinuto').textContent = '--';
+    $('relojEstado').textContent = 'Seleccioná un partido';
+    return;
+  }
+  $('relojMinuto').textContent = textoMinuto(partido);
+  $('relojEstado').textContent = `Partido ${partido.match_id} · ${NOMBRE_ESTADO[partido.estado]}`;
 }
 
 async function seleccionarPartido(matchId) {
@@ -248,9 +288,8 @@ async function refrescarGolesAnulables() {
 
 function actualizarCamposSegunTipo() {
   const tipo = $('tipoEvento').value;
-  $('campoEquipo').classList.toggle('oculto', tipo !== 'GOAL');
+  $('campoEquipo').classList.toggle('oculto', tipo !== 'GOAL' && tipo !== 'FOUL');
   $('campoAnula').classList.toggle('oculto', tipo !== 'GOAL_ANNULLED');
-  $('campoMinutoExtra').classList.toggle('oculto', tipo === 'ADDED_TIME');
   $('campoMinutosAgregados').classList.toggle('oculto', tipo !== 'ADDED_TIME');
   if (tipo === 'GOAL_ANNULLED') refrescarGolesAnulables();
 }
@@ -268,7 +307,16 @@ $('btnCrearPartido').onclick = async () => {
   }
 };
 
-$('btnRefrescarPartidos').onclick = refrescarPartidos;
+$('btnIniciarPartido').onclick = async () => {
+  if (!partidoSeleccionado) return;
+  try {
+    await pedir(`/api/partidos/${encodeURIComponent(partidoSeleccionado)}/iniciar`, { method: 'POST' });
+    registrar(`Partido ${partidoSeleccionado} iniciado: el reloj empieza a correr`, 'ok');
+    await refrescarPartidos();
+  } catch (error) {
+    registrar('No se pudo iniciar el partido: ' + error.message, 'err');
+  }
+};
 $('tipoEvento').onchange = actualizarCamposSegunTipo;
 $('matchIdEvento').onchange = refrescarGolesAnulables;
 
@@ -277,20 +325,13 @@ $('btnEnviarEvento').onclick = async () => {
   const tipo = $('tipoEvento').value;
   if (!matchId) { registrar('Indicá a qué partido va el evento', 'err'); return; }
 
-  const minuto = Number($('minuto').value);
-  if (!minuto) { registrar('Indicá el minuto del evento', 'err'); return; }
-
-  const cuerpo = { event_type: tipo, minuto };
-  if (tipo === 'GOAL') cuerpo.team = $('equipo').value;
+  const cuerpo = { event_type: tipo };
+  if (tipo === 'GOAL' || tipo === 'FOUL') cuerpo.team = $('equipo').value;
   if (tipo === 'GOAL_ANNULLED') {
     if (!$('anulaEventId').value) { registrar('No hay ningún gol vigente para anular en ese partido', 'err'); return; }
     cuerpo.annuls_event_id = $('anulaEventId').value;
   }
-  if (tipo === 'ADDED_TIME') {
-    cuerpo.minutos_agregados = Number($('minutosAgregados').value);
-  } else {
-    cuerpo.minuto_extra = Number($('minutoExtra').value) || 0;
-  }
+  if (tipo === 'ADDED_TIME') cuerpo.minutos_agregados = Number($('minutosAgregados').value);
 
   try {
     const evento = await pedir(`/api/partidos/${encodeURIComponent(matchId)}/eventos`, {
@@ -307,6 +348,8 @@ $('btnEnviarEvento').onclick = async () => {
 
 actualizarCamposSegunTipo();
 refrescarPartidos();
+// El reloj corre en el servidor: se consulta cada segundo para ver el minuto en vivo.
+setInterval(refrescarPartidos, 1000);
 </script>
 </body>
 </html>
