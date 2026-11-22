@@ -81,4 +81,41 @@ class PartidoFutbolTest {
 
         assertEquals(new Marcador(1, 0), partido.obtenerMarcador());
     }
+
+    @Test
+    void empiezaEnJuego() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+    }
+
+    @Test
+    void iniciarRevisionVarPoneElPartidoEnRevision() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.iniciarRevisionVar();
+
+        assertEquals(EstadoPartido.EN_REVISION, partido.obtenerEstado());
+    }
+
+    @Test
+    void confirmarJugadaTerminaLaRevisionYVuelveAJuego() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.iniciarRevisionVar();
+
+        partido.confirmarJugadaPorVar();
+
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+    }
+
+    @Test
+    void anularUnGolTerminaLaRevisionYVuelveAJuego() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.anotarGol(new IdEvento("evt_g1"), Equipo.LOCAL);
+        partido.iniciarRevisionVar();
+
+        partido.anularGolPorVar(new IdEvento("evt_g1"));
+
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+    }
 }

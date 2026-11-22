@@ -20,6 +20,7 @@ public class PartidoFutbol extends PartidoDeportivo {
     private Marcador marcador = Marcador.enCero();
     private int minutoActual = 0;
     private int minutoExtraActual = 0;
+    private EstadoPartido estado = EstadoPartido.EN_JUEGO;
 
     public PartidoFutbol(IdPartido id) {
         super(id);
@@ -36,6 +37,15 @@ public class PartidoFutbol extends PartidoDeportivo {
 
         golesActivos.remove(gol);
         marcador = marcador.restarGolDe(gol.equipo());
+        estado = EstadoPartido.EN_JUEGO;
+    }
+
+    public void iniciarRevisionVar() {
+        estado = EstadoPartido.EN_REVISION;
+    }
+
+    public void confirmarJugadaPorVar() {
+        estado = EstadoPartido.EN_JUEGO;
     }
 
     public void actualizarMinuto(int minuto, int minutoExtra) {
@@ -53,6 +63,10 @@ public class PartidoFutbol extends PartidoDeportivo {
 
     public int obtenerMinutoExtraActual() {
         return minutoExtraActual;
+    }
+
+    public EstadoPartido obtenerEstado() {
+        return estado;
     }
 
     private Optional<Gol> buscarGolActivo(IdEvento idEvento) {
