@@ -153,7 +153,7 @@ public class ServicioMarcadorFutbol {
         partido.actualizarMinuto(minuto, 0);
 
         guardarYPublicar(partido, new AlertaPartido(idPartido, idEvento, "ADDED_TIME", null, null,
-                minuto, 0, "Se añaden " + minutosAgregados + " minutos"));
+                minuto, 0, minutosAgregados == 1 ? "Se añade 1 minuto" : "Se añaden " + minutosAgregados + " minutos"));
     }
 
     /** El reloj avanzo (o llego un evento sin alerta, como GOAL_CONFIRMED): solo se mueve el minuto. */
