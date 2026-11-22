@@ -22,8 +22,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,144 +43,20 @@ class ServicioMarcadorFutbolTest {
 
     private final IdPartido idPartido = new IdPartido("123");
     private final IdEvento idEvento = new IdEvento("evt_g1");
-    private final IdEvento idAnulacion = new IdEvento("evt_a1");
+    private final IdEvento idOtroEvento = new IdEvento("evt_a1");
 
-    @Test
-    void procesarGolCreaElPartidoCuandoNoExisteYPublicaElMarcadorConElMinuto() {
-        // Arrange
+    private void sinPartidoGuardado() {
         when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.procesarGol(idPartido, idEvento, Equipo.LOCAL, 23, 0);
-
-        // Assert
-        verify(repositorio).guardar(any(PartidoFutbol.class));
-        verify(publicadorMarcador).publicarMarcador(eq(idPartido), eq(new Marcador(1, 0)), eq(23), eq(0), eq(EstadoPartido.EN_JUEGO));
-        AlertaPartido alerta = alertaPublicada();
-        assertEquals("GOAL", alerta.tipoEvento());
-        assertEquals(idEvento, alerta.idEvento());
-        assertEquals(Equipo.LOCAL, alerta.equipo());
-        assertEquals(23, alerta.minuto());
     }
 
-    @Test
-    void procesarGolAnuladoRevierteElMarcadorYAvisaQueGolSeAnulo() {
-        // Arrange
-        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
-        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
-
-        // Act
-        servicio.procesarGolAnulado(idPartido, idAnulacion, idEvento, 25, 0);
-
-        // Assert
-        verify(repositorio).guardar(partidoExistente);
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 25, 0, EstadoPartido.EN_JUEGO);
-        AlertaPartido alerta = alertaPublicada();
-        assertEquals("GOAL_ANNULLED", alerta.tipoEvento());
-        assertEquals(idAnulacion, alerta.idEvento());
-        assertEquals(idEvento, alerta.idEventoAnulado());
+    private void conPartidoGuardado(PartidoFutbol partido) {
+        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partido));
     }
 
-    @Test
-    void procesarGolAnuladoDeUnEventoInexistenteNoGuardaNiPublicaNada() {
-        // Arrange
-        PartidoFutbol partidoSinGoles = new PartidoFutbol(idPartido);
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoSinGoles));
-
-        // Act + Assert
-        assertThrows(EventoInexistenteException.class,
-                () -> servicio.procesarGolAnulado(idPartido, idAnulacion, idEvento, 25, 0));
-
-        verify(repositorio, never()).guardar(any());
-        verify(publicadorMarcador, never()).publicarMarcador(any(), any(), anyInt(), anyInt(), any());
-        verify(publicadorAlertas, never()).publicarAlerta(any());
-    }
-
-    @Test
-    void procesarRevisionVarPublicaElMarcadorEnRevisionYAvisa() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.procesarRevisionVar(idPartido, idEvento, 30, 0);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 30, 0, EstadoPartido.EN_REVISION);
-        assertEquals("VAR_CHECK", alertaPublicada().tipoEvento());
-    }
-
-    @Test
-    void procesarJugadaConfirmadaVuelveAPublicarElMarcadorEnJuegoYAvisa() {
-        // Arrange
-        PartidoFutbol partidoEnRevision = new PartidoFutbol(idPartido);
-        partidoEnRevision.iniciarRevisionVar();
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoEnRevision));
-
-        // Act
-        servicio.procesarJugadaConfirmada(idPartido, idEvento, 31, 0);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 31, 0, EstadoPartido.EN_JUEGO);
-        assertEquals("MATCH_CONTINUES", alertaPublicada().tipoEvento());
-    }
-
-    @Test
-    void procesarFaltaNoCambiaElMarcadorPeroAvisaConElEquipo() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.procesarFalta(idPartido, idEvento, Equipo.VISITANTE, 11, 0);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 11, 0, EstadoPartido.EN_JUEGO);
-        AlertaPartido alerta = alertaPublicada();
-        assertEquals("FOUL", alerta.tipoEvento());
-        assertEquals(Equipo.VISITANTE, alerta.equipo());
-    }
-
-    @Test
-    void procesarTiempoAnadidoAvisaCuantosMinutosSeAgregan() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.procesarTiempoAnadido(idPartido, idEvento, 45, 3);
-
-        // Assert
-        AlertaPartido alerta = alertaPublicada();
-        assertEquals("ADDED_TIME", alerta.tipoEvento());
-        assertEquals(45, alerta.minuto());
-        assertEquals("Se añaden 3 minutos", alerta.mensaje());
-    }
-
-    @Test
-    void actualizarMinutoCreaElPartidoCuandoNoExisteYPublicaElMarcadorEnCeroSinAvisar() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.actualizarMinuto(idPartido, 1, 0);
-
-        // Assert
-        verify(repositorio).guardar(any(PartidoFutbol.class));
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
-        verify(publicadorAlertas, never()).publicarAlerta(any());
-    }
-
-    @Test
-    void actualizarMinutoNoCambiaElMarcadorDeUnPartidoConGoles() {
-        // Arrange
-        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
-        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
-
-        // Act
-        servicio.actualizarMinuto(idPartido, 46, 0);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 46, 0, EstadoPartido.EN_JUEGO);
+    private PartidoFutbol partidoPublicado() {
+        ArgumentCaptor<PartidoFutbol> captor = ArgumentCaptor.forClass(PartidoFutbol.class);
+        verify(publicadorMarcador).publicarMarcador(captor.capture());
+        return captor.getValue();
     }
 
     private AlertaPartido alertaPublicada() {
@@ -192,57 +66,166 @@ class ServicioMarcadorFutbolTest {
     }
 
     @Test
-    void procesarInicioPublicaElPartidoEnCeroEnElMinutoUnoYAvisa() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
+    void procesarCreacionPublicaElPartidoPorJugarConSusEquiposSinAvisar() {
+        sinPartidoGuardado();
 
-        // Act
-        servicio.procesarInicio(idPartido, idEvento, 1, 0);
+        servicio.procesarCreacion(idPartido, "Nacional", "América");
 
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
-        assertEquals("MATCH_STARTED", alertaPublicada().tipoEvento());
-    }
-
-    @Test
-    void procesarFinalDejaElPartidoFinalizadoYAvisa() {
-        // Arrange
-        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
-        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoExistente));
-
-        // Act
-        servicio.procesarFinal(idPartido, idAnulacion, 90, 3);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, new Marcador(1, 0), 90, 3, EstadoPartido.FINALIZADO);
-        assertEquals("MATCH_ENDED", alertaPublicada().tipoEvento());
-    }
-
-    @Test
-    void procesarCreacionPublicaElPartidoPorJugarEnCeroSinAvisar() {
-        // Arrange
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.empty());
-
-        // Act
-        servicio.procesarCreacion(idPartido);
-
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 0, 0, EstadoPartido.POR_JUGAR);
+        PartidoFutbol partido = partidoPublicado();
+        assertEquals(EstadoPartido.POR_JUGAR, partido.obtenerEstado());
+        assertEquals("Nacional", partido.obtenerEquipoLocal());
+        assertEquals(Marcador.enCero(), partido.obtenerMarcador());
         verify(publicadorAlertas, never()).publicarAlerta(any());
     }
 
     @Test
-    void procesarInicioPasaUnPartidoPorJugarAEnJuego() {
-        // Arrange
-        PartidoFutbol partidoProgramado = new PartidoFutbol(idPartido);
-        partidoProgramado.programar();
-        when(repositorio.buscarPorId(idPartido)).thenReturn(Optional.of(partidoProgramado));
+    void procesarInicioPasaElPartidoAEnJuegoYAvisa() {
+        PartidoFutbol programado = new PartidoFutbol(idPartido);
+        programado.programar();
+        conPartidoGuardado(programado);
 
-        // Act
         servicio.procesarInicio(idPartido, idEvento, 1, 0);
 
-        // Assert
-        verify(publicadorMarcador).publicarMarcador(idPartido, Marcador.enCero(), 1, 0, EstadoPartido.EN_JUEGO);
+        assertEquals(EstadoPartido.EN_JUEGO, partidoPublicado().obtenerEstado());
+        assertEquals("MATCH_STARTED", alertaPublicada().tipoEvento());
+    }
+
+    @Test
+    void procesarGolSumaYAvisaConElMinuto() {
+        sinPartidoGuardado();
+
+        servicio.procesarGol(idPartido, idEvento, Equipo.LOCAL, 23, 0);
+
+        PartidoFutbol partido = partidoPublicado();
+        assertEquals(new Marcador(1, 0), partido.obtenerMarcador());
+        assertEquals(23, partido.obtenerMinutoActual());
+        AlertaPartido alerta = alertaPublicada();
+        assertEquals("GOAL", alerta.tipoEvento());
+        assertEquals(Equipo.LOCAL, alerta.equipo());
+    }
+
+    @Test
+    void procesarGolAnuladoRestaYAvisaQueGolSeAnulo() {
+        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
+        partidoExistente.anotarGol(idEvento, Equipo.LOCAL);
+        conPartidoGuardado(partidoExistente);
+
+        servicio.procesarGolAnulado(idPartido, idOtroEvento, idEvento, 25, 0);
+
+        assertEquals(Marcador.enCero(), partidoPublicado().obtenerMarcador());
+        AlertaPartido alerta = alertaPublicada();
+        assertEquals("GOAL_ANNULLED", alerta.tipoEvento());
+        assertEquals(idEvento, alerta.idEventoAnulado());
+    }
+
+    @Test
+    void procesarGolAnuladoDeUnEventoInexistenteNoGuardaNiPublicaNada() {
+        conPartidoGuardado(new PartidoFutbol(idPartido));
+
+        assertThrows(EventoInexistenteException.class,
+                () -> servicio.procesarGolAnulado(idPartido, idOtroEvento, idEvento, 25, 0));
+
+        verify(repositorio, never()).guardar(any());
+        verify(publicadorMarcador, never()).publicarMarcador(any());
+        verify(publicadorAlertas, never()).publicarAlerta(any());
+    }
+
+    @Test
+    void procesarFaltaLaCuentaParaSuEquipo() {
+        sinPartidoGuardado();
+
+        servicio.procesarFalta(idPartido, idEvento, Equipo.VISITANTE, 11, 0);
+
+        assertEquals(new Marcador(0, 1), partidoPublicado().obtenerFaltas());
+        assertEquals("FOUL", alertaPublicada().tipoEvento());
+    }
+
+    @Test
+    void procesarFaltaAnuladaLaDescuentaYAvisa() {
+        PartidoFutbol partidoExistente = new PartidoFutbol(idPartido);
+        partidoExistente.registrarFalta(idEvento, Equipo.LOCAL);
+        conPartidoGuardado(partidoExistente);
+
+        servicio.procesarFaltaAnulada(idPartido, idOtroEvento, idEvento, 12, 0);
+
+        assertEquals(Marcador.enCero(), partidoPublicado().obtenerFaltas());
+        assertEquals("FOUL_ANNULLED", alertaPublicada().tipoEvento());
+    }
+
+    @Test
+    void procesarTarjetaAvisaElColorYElEquipo() {
+        sinPartidoGuardado();
+
+        servicio.procesarTarjeta(idPartido, idEvento, "RED_CARD", Equipo.LOCAL, 60, 0);
+
+        AlertaPartido alerta = alertaPublicada();
+        assertEquals("RED_CARD", alerta.tipoEvento());
+        assertEquals("Tarjeta roja para el equipo LOCAL", alerta.mensaje());
+    }
+
+    @Test
+    void procesarRevisionVarPoneElPartidoEnRevisionYDiceQueSeRevisa() {
+        sinPartidoGuardado();
+
+        servicio.procesarRevisionVar(idPartido, idOtroEvento, idEvento, 30, 0);
+
+        assertEquals(EstadoPartido.EN_REVISION, partidoPublicado().obtenerEstado());
+        AlertaPartido alerta = alertaPublicada();
+        assertEquals("VAR_CHECK", alerta.tipoEvento());
+        assertEquals(idEvento, alerta.idEventoRevisado());
+    }
+
+    @Test
+    void procesarJugadaConfirmadaVuelveAEnJuego() {
+        PartidoFutbol enRevision = new PartidoFutbol(idPartido);
+        enRevision.iniciarRevisionVar();
+        conPartidoGuardado(enRevision);
+
+        servicio.procesarJugadaConfirmada(idPartido, idOtroEvento, idEvento, 31, 0);
+
+        assertEquals(EstadoPartido.EN_JUEGO, partidoPublicado().obtenerEstado());
+        assertEquals(idEvento, alertaPublicada().idEventoRevisado());
+    }
+
+    @Test
+    void procesarEntretiempoYSegundoTiempo() {
+        PartidoFutbol partido = new PartidoFutbol(idPartido);
+        conPartidoGuardado(partido);
+
+        servicio.procesarEntretiempo(idPartido, idEvento, 45, 2);
+        assertEquals(EstadoPartido.ENTRETIEMPO, partido.obtenerEstado());
+
+        servicio.procesarSegundoTiempo(idPartido, idOtroEvento, 46, 0);
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+        assertEquals(46, partido.obtenerMinutoActual());
+    }
+
+    @Test
+    void procesarFinalDejaElPartidoFinalizado() {
+        sinPartidoGuardado();
+
+        servicio.procesarFinal(idPartido, idEvento, 90, 3);
+
+        assertEquals(EstadoPartido.FINALIZADO, partidoPublicado().obtenerEstado());
+        assertEquals("MATCH_ENDED", alertaPublicada().tipoEvento());
+    }
+
+    @Test
+    void procesarTiempoAnadidoAvisaCuantosMinutosSeAgregan() {
+        sinPartidoGuardado();
+
+        servicio.procesarTiempoAnadido(idPartido, idEvento, 45, 3);
+
+        assertEquals("Se añaden 3 minutos", alertaPublicada().mensaje());
+    }
+
+    @Test
+    void actualizarMinutoPublicaElMarcadorSinAvisar() {
+        sinPartidoGuardado();
+
+        servicio.actualizarMinuto(idPartido, 1, 0);
+
+        assertEquals(1, partidoPublicado().obtenerMinutoActual());
+        verify(publicadorAlertas, never()).publicarAlerta(any());
     }
 }

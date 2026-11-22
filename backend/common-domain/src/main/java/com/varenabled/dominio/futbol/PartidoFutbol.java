@@ -13,30 +13,55 @@ import java.util.Optional;
 
 public class PartidoFutbol extends PartidoDeportivo {
 
-    private record Gol(IdEvento idEvento, Equipo equipo) {
+    /** Una jugada que cuenta para un equipo (gol o falta) y que el VAR puede anular. */
+    private record Jugada(IdEvento idEvento, Equipo equipo) {
     }
 
-    private final List<Gol> golesActivos = new ArrayList<>();
+    private final List<Jugada> golesActivos = new ArrayList<>();
+    private final List<Jugada> faltasActivas = new ArrayList<>();
     private Marcador marcador = Marcador.enCero();
+    // Se reutiliza Marcador para contar faltas: local = faltas del local, visitante = faltas del visitante.
+    private Marcador faltas = Marcador.enCero();
     private int minutoActual = 0;
     private int minutoExtraActual = 0;
     private EstadoPartido estado = EstadoPartido.EN_JUEGO;
+    private String equipoLocal;
+    private String equipoVisitante;
 
     public PartidoFutbol(IdPartido id) {
         super(id);
     }
 
+    public void nombrarEquipos(String equipoLocal, String equipoVisitante) {
+        this.equipoLocal = equipoLocal;
+        this.equipoVisitante = equipoVisitante;
+    }
+
     public void anotarGol(IdEvento idEvento, Equipo equipo) {
-        golesActivos.add(new Gol(idEvento, equipo));
+        golesActivos.add(new Jugada(idEvento, equipo));
         marcador = marcador.sumarGolDe(equipo);
     }
 
     public void anularGolPorVar(IdEvento idEventoAnulado) {
-        Gol gol = buscarGolActivo(idEventoAnulado)
+        Jugada gol = buscar(golesActivos, idEventoAnulado)
                 .orElseThrow(() -> new EventoInexistenteException(idEventoAnulado));
 
         golesActivos.remove(gol);
         marcador = marcador.restarGolDe(gol.equipo());
+        estado = EstadoPartido.EN_JUEGO;
+    }
+
+    public void registrarFalta(IdEvento idEvento, Equipo equipo) {
+        faltasActivas.add(new Jugada(idEvento, equipo));
+        faltas = faltas.sumarPuntosDe(equipo, 1);
+    }
+
+    public void anularFaltaPorVar(IdEvento idEventoAnulado) {
+        Jugada falta = buscar(faltasActivas, idEventoAnulado)
+                .orElseThrow(() -> new EventoInexistenteException(idEventoAnulado));
+
+        faltasActivas.remove(falta);
+        faltas = faltas.restarPuntosDe(falta.equipo(), 1);
         estado = EstadoPartido.EN_JUEGO;
     }
 
@@ -56,6 +81,10 @@ public class PartidoFutbol extends PartidoDeportivo {
         estado = EstadoPartido.EN_JUEGO;
     }
 
+    public void irAlEntretiempo() {
+        estado = EstadoPartido.ENTRETIEMPO;
+    }
+
     public void finalizar() {
         estado = EstadoPartido.FINALIZADO;
     }
@@ -67,6 +96,10 @@ public class PartidoFutbol extends PartidoDeportivo {
 
     public Marcador obtenerMarcador() {
         return marcador;
+    }
+
+    public Marcador obtenerFaltas() {
+        return faltas;
     }
 
     public int obtenerMinutoActual() {
@@ -81,9 +114,17 @@ public class PartidoFutbol extends PartidoDeportivo {
         return estado;
     }
 
-    private Optional<Gol> buscarGolActivo(IdEvento idEvento) {
-        return golesActivos.stream()
-                .filter(gol -> gol.idEvento().equals(idEvento))
+    public String obtenerEquipoLocal() {
+        return equipoLocal;
+    }
+
+    public String obtenerEquipoVisitante() {
+        return equipoVisitante;
+    }
+
+    private Optional<Jugada> buscar(List<Jugada> jugadas, IdEvento idEvento) {
+        return jugadas.stream()
+                .filter(jugada -> jugada.idEvento().equals(idEvento))
                 .findFirst();
     }
 }

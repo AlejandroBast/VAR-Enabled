@@ -30,7 +30,8 @@ public class PublicadorAlertasRabbit implements PublicadorAlertasPort {
                 alerta.minuto(),
                 alerta.minutoExtra(),
                 alerta.mensaje(),
-                Instant.now());
+                Instant.now(),
+                valorDe(alerta.idEventoRevisado()));
         rabbitTemplate.convertAndSend(ConfiguracionRabbitMQ.EXCHANGE_ALERTAS, "", dto);
     }
 

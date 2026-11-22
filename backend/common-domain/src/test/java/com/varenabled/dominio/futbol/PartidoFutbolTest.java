@@ -138,4 +138,44 @@ class PartidoFutbolTest {
         partido.iniciar();
         assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
     }
+
+    @Test
+    void lasFaltasSeCuentanPorEquipo() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.registrarFalta(new IdEvento("evt_f1"), Equipo.LOCAL);
+        partido.registrarFalta(new IdEvento("evt_f2"), Equipo.VISITANTE);
+        partido.registrarFalta(new IdEvento("evt_f3"), Equipo.VISITANTE);
+
+        assertEquals(new Marcador(1, 2), partido.obtenerFaltas());
+    }
+
+    @Test
+    void anularUnaFaltaLaDescuentaYTerminaLaRevision() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+        partido.registrarFalta(new IdEvento("evt_f1"), Equipo.LOCAL);
+        partido.iniciarRevisionVar();
+
+        partido.anularFaltaPorVar(new IdEvento("evt_f1"));
+
+        assertEquals(Marcador.enCero(), partido.obtenerFaltas());
+        assertEquals(EstadoPartido.EN_JUEGO, partido.obtenerEstado());
+    }
+
+    @Test
+    void anularUnaFaltaQueNoExisteLanzaExcepcion() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        assertThrows(EventoInexistenteException.class, () -> partido.anularFaltaPorVar(new IdEvento("evt_f9")));
+    }
+
+    @Test
+    void elPartidoGuardaLosNombresDeLosEquipos() {
+        PartidoFutbol partido = new PartidoFutbol(new IdPartido("123"));
+
+        partido.nombrarEquipos("Nacional", "América");
+
+        assertEquals("Nacional", partido.obtenerEquipoLocal());
+        assertEquals("América", partido.obtenerEquipoVisitante());
+    }
 }

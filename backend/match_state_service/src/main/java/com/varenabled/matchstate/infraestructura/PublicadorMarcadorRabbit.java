@@ -2,9 +2,7 @@ package com.varenabled.matchstate.infraestructura;
 
 import com.varenabled.aplicacion.PublicadorMarcadorPort;
 import com.varenabled.contratos.ActualizacionMarcadorDto;
-import com.varenabled.dominio.IdPartido;
-import com.varenabled.dominio.Marcador;
-import com.varenabled.dominio.futbol.EstadoPartido;
+import com.varenabled.dominio.futbol.PartidoFutbol;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +16,20 @@ public class PublicadorMarcadorRabbit implements PublicadorMarcadorPort {
     }
 
     @Override
-    public void publicarMarcador(IdPartido idPartido, Marcador marcador, int minuto, int minutoExtra, EstadoPartido estado) {
-        String routingKey = "score.match_" + idPartido.valor();
+    public void publicarMarcador(PartidoFutbol partido) {
+        String matchId = partido.obtenerId().valor();
         ActualizacionMarcadorDto actualizacion = new ActualizacionMarcadorDto(
-                idPartido.valor(), marcador.local(), marcador.visitante(), minuto, minutoExtra, estado.name());
+                matchId,
+                partido.obtenerMarcador().local(),
+                partido.obtenerMarcador().visitante(),
+                partido.obtenerMinutoActual(),
+                partido.obtenerMinutoExtraActual(),
+                partido.obtenerEstado().name(),
+                partido.obtenerEquipoLocal(),
+                partido.obtenerEquipoVisitante(),
+                partido.obtenerFaltas().local(),
+                partido.obtenerFaltas().visitante());
 
-        rabbitTemplate.convertAndSend(ConfiguracionRabbitMQ.EXCHANGE_MARCADOR, routingKey, actualizacion);
+        rabbitTemplate.convertAndSend(ConfiguracionRabbitMQ.EXCHANGE_MARCADOR, "score.match_" + matchId, actualizacion);
     }
 }
