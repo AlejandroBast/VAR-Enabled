@@ -1,0 +1,34 @@
+<main class="dashboard">
+  <header class="encabezado">
+    <div>
+      <p class="etiqueta">VAR-Enabled</p>
+      <h1>Marcadores en vivo</h1>
+      <p class="subtitulo">Sigue la actualización oficial de cada partido.</p>
+    </div>
+    <div class="conexion" [class.activa]="conectado()">
+      <span aria-hidden="true"></span>
+      {{ mensajeEstado() }}
+    </div>
+  </header>
+
+  @if (partidos().length > 0) {
+    <section class="partidos" aria-label="Partidos en vivo">
+      @for (partido of partidos(); track partido.matchId) {
+        <article class="partido">
+          <p class="id-partido">Partido {{ partido.matchId }}</p>
+          <div class="marcador" aria-label="Marcador">
+            <span>{{ partido.local }}</span><b>—</b><span>{{ partido.visitante }}</span>
+          </div>
+          <p class="equipos">Local <span>vs.</span> Visitante</p>
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="vacio" aria-live="polite">
+      <div class="icono">⚽</div>
+      <h2>Aún no hay partidos para mostrar</h2>
+      <p>Cuando el sistema reciba una actualización, el marcador aparecerá aquí automáticamente.</p>
+      @if (!conectado()) { <button type="button" (click)="reconectar()">Reintentar conexión</button> }
+    </section>
+  }
+</main>
