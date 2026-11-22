@@ -37,8 +37,8 @@ class EscuchaEventosPartidoTest {
     void unGolAnuladoDejaElMarcadorEnCero() throws InterruptedException {
         // Arrange
         IdPartido idPartido = new IdPartido("123");
-        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g123", null, null, Instant.now());
-        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g123", null, Instant.now());
+        EventoPartidoDto gol = new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g123", null, 10, 0, null, Instant.now());
+        EventoPartidoDto golAnulado = new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g123", 12, 0, null, Instant.now());
 
         // Act
         kafkaTemplate.send("match_events", "123", gol);

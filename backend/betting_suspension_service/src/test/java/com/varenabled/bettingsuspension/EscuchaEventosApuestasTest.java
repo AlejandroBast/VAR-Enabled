@@ -32,7 +32,7 @@ class EscuchaEventosApuestasTest {
     @Test
     void unGolOrdenaSuspenderLasApuestas() {
         kafkaTemplate.send("match_events", "123",
-                new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, null, Instant.now()));
+                new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 10, 0, null, Instant.now()));
 
         verify(rabbitTemplate, timeout(5000)).convertAndSend(
                 eq(ConfiguracionRabbitMQ.COLA_COMANDOS),
@@ -42,7 +42,7 @@ class EscuchaEventosApuestasTest {
     @Test
     void unGolAnuladoOrdenaReanudarLasApuestas() {
         kafkaTemplate.send("match_events", "123",
-                new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", null, Instant.now()));
+                new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", 12, 0, null, Instant.now()));
 
         verify(rabbitTemplate, timeout(5000)).convertAndSend(
                 eq(ConfiguracionRabbitMQ.COLA_COMANDOS),
@@ -52,7 +52,7 @@ class EscuchaEventosApuestasTest {
     @Test
     void unEventoQueNoAfectaLasApuestasNoPublicaNada() throws InterruptedException {
         kafkaTemplate.send("match_events", "123",
-                new EventoPartidoDto("123", "FOOTBALL", "MATCH_STARTED", null, null, null, null, Instant.now()));
+                new EventoPartidoDto("123", "FOOTBALL", "MATCH_STARTED", null, null, null, 1, 0, null, Instant.now()));
 
         Thread.sleep(1000);
         verifyNoInteractions(rabbitTemplate);
