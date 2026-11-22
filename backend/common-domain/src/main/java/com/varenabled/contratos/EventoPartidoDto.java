@@ -2,6 +2,12 @@ package com.varenabled.contratos;
 
 import java.time.Instant;
 
+/**
+ * Evento que viaja por Kafka (topico match_events).
+ *
+ * reviewsEventId: en VAR_CHECK, MATCH_CONTINUES y GOAL_CONFIRMED, el gol o la falta al que se refiere.
+ * homeTeam / awayTeam: nombres de los equipos, solo en MATCH_CREATED.
+ */
 public record EventoPartidoDto(
         String matchId,
         String sport,
@@ -12,7 +18,10 @@ public record EventoPartidoDto(
         Integer minuto,
         Integer minutoExtra,
         Integer minutosAgregados,
-        Instant timestamp
+        Instant timestamp,
+        String reviewsEventId,
+        String homeTeam,
+        String awayTeam
 ) {
 
     public EventoPartidoDto {
@@ -28,5 +37,13 @@ public record EventoPartidoDto(
         if (minutoExtra != null && (minutoExtra < 0 || minutoExtra > 10)) {
             throw new IllegalArgumentException("El minutoExtra debe estar entre 0 y 10");
         }
+    }
+
+    /** Forma corta, para los eventos que no revisan nada ni traen nombres de equipos. */
+    public EventoPartidoDto(String matchId, String sport, String eventType, String team, String eventId,
+                            String annulsEventId, Integer minuto, Integer minutoExtra, Integer minutosAgregados,
+                            Instant timestamp) {
+        this(matchId, sport, eventType, team, eventId, annulsEventId, minuto, minutoExtra, minutosAgregados,
+                timestamp, null, null, null);
     }
 }
