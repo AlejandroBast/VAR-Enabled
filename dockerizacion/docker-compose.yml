@@ -113,6 +113,8 @@ services:
     image: var-enabled/live_feed_producer
     environment:
       <<: *kafka-env
+      # Segundos reales que dura un minuto de partido (60 = tiempo real). Para probar rapido: PARTIDO_SEGUNDOS_POR_MINUTO=2
+      PARTIDO_SEGUNDOS_POR_MINUTO: ${PARTIDO_SEGUNDOS_POR_MINUTO:-60}
     ports:
       - "8082:8082"     # API para crear partidos y disparar eventos manualmente (ver EventMaker)
     depends_on:
