@@ -34,8 +34,11 @@ class EscuchaEventosArchivadorTest {
     private FinalScoreJpaRepository marcadorRepositorio;
 
     @Test
-    void unGolAnuladoQuedaRegistradoEnLasTresTablas() throws InterruptedException {
+    void unGolAnuladoQuedaRegistradoEnLasTresTablasYElRelojNoSeArchiva() throws InterruptedException {
         Instant momentoDelGol = Instant.now();
+        // El avance del reloj no se archiva: por eso al final solo quedan 2 eventos guardados.
+        kafkaTemplate.send("match_events", "123",
+                new EventoPartidoDto("123", "FOOTBALL", "CLOCK_TICK", null, "evt_r1", null, 9, 0, null, momentoDelGol));
         kafkaTemplate.send("match_events", "123",
                 new EventoPartidoDto("123", "FOOTBALL", "GOAL", "home", "evt_g1", null, 10, 0, null, momentoDelGol));
         kafkaTemplate.send("match_events", "123",
