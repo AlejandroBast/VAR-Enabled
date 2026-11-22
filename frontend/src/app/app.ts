@@ -15,6 +15,7 @@ interface Marcador {
   equipo_visitante: string | null;
   faltas_local: number;
   faltas_visitante: number;
+  apuestas: 'ABIERTAS' | 'CERRADAS' | 'DETENIDAS' | null;
 }
 
 /** Lo que manda dashboard_backend por cada evento del partido (AlertaPartidoDto). */

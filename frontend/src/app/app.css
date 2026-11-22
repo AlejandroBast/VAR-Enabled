@@ -30,7 +30,17 @@
 @keyframes latido { 50% { opacity: .55; } }
 
 /* ---- Detalle (derecha) ---- */
-.detalle { padding: 28px 32px; min-width: 0; overflow-y: auto; }
+.detalle { padding: 28px 32px; min-width: 0; overflow-y: auto; position: relative; }
+
+/* Aviso de apuestas en la esquina: verde abiertas, rojo cerradas, ambar detenidas (VAR). */
+.apuestas { align-items: center; border: 2px solid; border-radius: 10px; display: flex; font-size: 1.05rem; font-weight: 800; gap: 10px; padding: 10px 16px; position: absolute; right: 28px; top: 24px; }
+.apuestas .punto { border-radius: 50%; height: 12px; width: 12px; }
+.apuestas.abiertas { background: var(--verde-fondo); border-color: var(--verde); color: var(--verde-texto); }
+.apuestas.abiertas .punto { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+.apuestas.cerradas { background: #fde2e2; border-color: #dc2626; color: #991b1b; }
+.apuestas.cerradas .punto { background: #dc2626; }
+.apuestas.detenidas { animation: latido 1.4s ease-in-out infinite; background: var(--ambar-fondo); border-color: var(--ambar); color: var(--ambar-texto); }
+.apuestas.detenidas .punto { background: var(--ambar); }
 .cabecera { text-align: center; }
 .cabecera h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .resumen { font-size: 1.2rem; font-variant-numeric: tabular-nums; font-weight: 700; margin: 12px 0 0; }
@@ -80,6 +90,7 @@
   .dashboard { grid-template-columns: 1fr; height: auto; }
   .lista { border-right: 0; border-bottom: 1px solid var(--borde); max-height: 45vh; }
   .detalle { padding: 20px 16px; }
+  .apuestas { justify-content: center; margin-bottom: 14px; position: static; }
   .equipo .escudo { height: 64px; width: 56px; }
   .equipo { font-size: 1rem; }
   .fila { gap: 10px; grid-template-columns: 44px 40px 1fr; margin: 0 12px; }

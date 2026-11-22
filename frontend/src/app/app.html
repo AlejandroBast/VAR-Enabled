@@ -31,6 +31,12 @@
 
   <section class="detalle">
     @if (partidoSeleccionado(); as partido) {
+      @if (partido.marcador.apuestas) {
+        <div [class]="'apuestas ' + partido.marcador.apuestas.toLowerCase()" role="status" aria-live="polite">
+          <span class="punto" aria-hidden="true"></span>
+          Apuestas {{ partido.marcador.apuestas.toLowerCase() }}
+        </div>
+      }
       <header class="cabecera">
         <h2>{{ titulo(partido.marcador) }}</h2>
         <span [class]="'insignia grande ' + claseEstado(partido.marcador.estado)">
