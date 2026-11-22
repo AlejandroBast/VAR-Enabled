@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAR-Enabled · EventMaker</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f172a;
+    --panel: #172033;
+    --borde: #26344d;
+    --texto: #f8fafc;
+    --texto-sutil: #94a3b8;
+    --acento: #22c55e;
+    --acento-hover: #4ade80;
+    --error: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--texto);
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    margin: 0;
+    padding: 32px 20px 64px;
+  }
+  main { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin: 0 0 4px; }
+  .subtitulo { color: var(--texto-sutil); margin: 0 0 28px; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  h2 { font-size: 1.05rem; margin: 0 0 14px; }
+  label { display: block; font-size: .85rem; color: var(--texto-sutil); margin: 10px 0 4px; }
+  input, select, button {
+    font-family: inherit;
+    font-size: .95rem;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: #0f1626;
+    color: var(--texto);
+    padding: 9px 11px;
+  }
+  input, select { width: 100%; }
+  .fila { display: flex; gap: 12px; flex-wrap: wrap; }
+  .fila > div { flex: 1; min-width: 160px; }
+  button {
+    background: var(--acento);
+    border: 0;
+    color: #052e16;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    padding: 10px 16px;
+  }
+  button:hover { background: var(--acento-hover); }
+  button.secundario {
+    background: transparent;
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    font-weight: 600;
+  }
+  button.secundario:hover { border-color: var(--acento); color: var(--acento); }
+  #apiBase { margin-bottom: 22px; }
+  .lista-partidos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip {
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .chip.activo { border-color: var(--acento); color: var(--acento); }
+  #log {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: .82rem;
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  #log div { padding: 6px 0; border-bottom: 1px solid var(--borde); }
+  #log .ok { color: var(--acento); }
+  #log .err { color: var(--error); }
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>VAR-Enabled · EventMaker</h1>
+  <p class="subtitulo">Crea partidos y dispara eventos a mano contra la API de <code>live_feed_producer</code>, para comprobar el flujo del VAR.</p>
+
+  <section>
+    <label for="apiBase">URL de la API</label>
+    <input id="apiBase" value="http://localhost:8082">
+  </section>
+
+  <section>
+    <h2>1. Crear partido</h2>
+    <div class="fila">
+      <div>
+        <label for="nuevoMatchId">ID del partido</label>
+        <input id="nuevoMatchId" placeholder="ej. 123">
+      </div>
+    </div>
+    <button id="btnCrearPartido">Crear partido</button>
+
+    <label style="margin-top:18px">Partidos creados (clic para seleccionar)</label>
+    <div id="listaPartidos" class="lista-partidos"></div>
+    <button id="btnRefrescarPartidos" class="secundario">Actualizar lista</button>
+  </section>
+
+  <section>
+    <h2>2. Disparar evento</h2>
+    <div class="fila">
+      <div>
+        <label for="matchIdEvento">Partido</label>
+        <input id="matchIdEvento" placeholder="seleccioná uno arriba o escribí el ID">
+      </div>
+      <div>
+        <label for="tipoEvento">Tipo de evento</label>
+        <select id="tipoEvento">
+          <option value="GOAL">GOAL (gol)</option>
+          <option value="FOUL">FOUL (falta)</option>
+          <option value="VAR_CHECK">VAR_CHECK (revisión)</option>
+          <option value="GOAL_ANNULLED">GOAL_ANNULLED (gol anulado)</option>
+          <option value="MATCH_CONTINUES">MATCH_CONTINUES (sigue el juego)</option>
+        </select>
+      </div>
+    </div>
+    <div class="fila">
+      <div id="campoEquipo">
+        <label for="equipo">Equipo</label>
+        <select id="equipo">
+          <option value="home">Local (home)</option>
+          <option value="away">Visitante (away)</option>
+        </select>
+      </div>
+      <div id="campoAnula" class="oculto">
+        <label for="anulaEventId">Gol que anula</label>
+        <select id="anulaEventId"></select>
+      </div>
+    </div>
+    <button id="btnEnviarEvento">Enviar evento</button>
+  </section>
+
+  <section>
+    <h2>Actividad</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let partidoSeleccionado = null;
+
+function apiBase() { return $('apiBase').value.replace(/\/$/, ''); }
+
+function registrar(mensaje, tipo) {
+  const linea = document.createElement('div');
+  linea.className = tipo || '';
+  const hora = new Date().toLocaleTimeString();
+  linea.textContent = `[${hora}] ${mensaje}`;
+  $('log').prepend(linea);
+}
+
+async function pedir(path, opciones) {
+  const respuesta = await fetch(apiBase() + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opciones,
+  });
+  const texto = await respuesta.text();
+  const cuerpo = texto ? JSON.parse(texto) : null;
+  if (!respuesta.ok) {
+    throw new Error(cuerpo && cuerpo.error ? cuerpo.error : `HTTP ${respuesta.status}`);
+  }
+  return cuerpo;
+}
+
+async function refrescarPartidos() {
+  try {
+    const partidos = await pedir('/api/partidos');
+    const contenedor = $('listaPartidos');
+    contenedor.innerHTML = '';
+    partidos.forEach((matchId) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (matchId === partidoSeleccionado ? ' activo' : '');
+      chip.textContent = matchId;
+      chip.onclick = () => seleccionarPartido(matchId);
+      contenedor.appendChild(chip);
+    });
+  } catch (error) {
+    registrar('No se pudo listar los partidos: ' + error.message, 'err');
+  }
+}
+
+async function seleccionarPartido(matchId) {
+  partidoSeleccionado = matchId;
+  $('matchIdEvento').value = matchId;
+  await refrescarPartidos();
+  await refrescarGolesAnulables();
+}
+
+async function refrescarGolesAnulables() {
+  const matchId = $('matchIdEvento').value.trim();
+  const select = $('anulaEventId');
+  select.innerHTML = '';
+  if (!matchId) return;
+  try {
+    const eventos = await pedir(`/api/partidos/${encodeURIComponent(matchId)}/eventos`);
+    const golesVigentes = [];
+    eventos.forEach((evento) => {
+      if (evento.event_type === 'GOAL') golesVigentes.push(evento);
+      if (evento.event_type === 'GOAL_ANNULLED') {
+        const indice = golesVigentes.findIndex((g) => g.event_id === evento.annuls_event_id);
+        if (indice !== -1) golesVigentes.splice(indice, 1);
+      }
+    });
+    golesVigentes.forEach((gol) => {
+      const opcion = document.createElement('option');
+      opcion.value = gol.event_id;
+      opcion.textContent = `${gol.event_id} (${gol.team})`;
+      select.appendChild(opcion);
+    });
+  } catch (error) {
+    registrar('No se pudo cargar el historial del partido: ' + error.message, 'err');
+  }
+}
+
+function actualizarCamposSegunTipo() {
+  const tipo = $('tipoEvento').value;
+  $('campoEquipo').classList.toggle('oculto', tipo !== 'GOAL');
+  $('campoAnula').classList.toggle('oculto', tipo !== 'GOAL_ANNULLED');
+  if (tipo === 'GOAL_ANNULLED') refrescarGolesAnulables();
+}
+
+$('btnCrearPartido').onclick = async () => {
+  const matchId = $('nuevoMatchId').value.trim();
+  if (!matchId) { registrar('Escribí un ID de partido primero', 'err'); return; }
+  try {
+    await pedir('/api/partidos', { method: 'POST', body: JSON.stringify({ match_id: matchId }) });
+    registrar(`Partido ${matchId} creado`, 'ok');
+    $('nuevoMatchId').value = '';
+    await seleccionarPartido(matchId);
+  } catch (error) {
+    registrar('No se pudo crear el partido: ' + error.message, 'err');
+  }
+};
+
+$('btnRefrescarPartidos').onclick = refrescarPartidos;
+$('tipoEvento').onchange = actualizarCamposSegunTipo;
+$('matchIdEvento').onchange = refrescarGolesAnulables;
+
+$('btnEnviarEvento').onclick = async () => {
+  const matchId = $('matchIdEvento').value.trim();
+  const tipo = $('tipoEvento').value;
+  if (!matchId) { registrar('Indicá a qué partido va el evento', 'err'); return; }
+
+  const cuerpo = { event_type: tipo };
+  if (tipo === 'GOAL') cuerpo.team = $('equipo').value;
+  if (tipo === 'GOAL_ANNULLED') {
+    if (!$('anulaEventId').value) { registrar('No hay ningún gol vigente para anular en ese partido', 'err'); return; }
+    cuerpo.annuls_event_id = $('anulaEventId').value;
+  }
+
+  try {
+    const evento = await pedir(`/api/partidos/${encodeURIComponent(matchId)}/eventos`, {
+      method: 'POST',
+      body: JSON.stringify(cuerpo),
+    });
+    registrar(`${evento.event_type} enviado a ${matchId} (event_id=${evento.event_id})`, 'ok');
+    await refrescarGolesAnulables();
+  } catch (error) {
+    registrar('No se pudo enviar el evento: ' + error.message, 'err');
+  }
+};
+
+actualizarCamposSegunTipo();
+refrescarPartidos();
+</script>
+</body>
+</html>

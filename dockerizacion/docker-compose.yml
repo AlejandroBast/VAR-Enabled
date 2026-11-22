@@ -113,6 +113,8 @@ services:
     image: var-enabled/live_feed_producer
     environment:
       <<: *kafka-env
+    ports:
+      - "8082:8082"     # API para crear partidos y disparar eventos manualmente (ver EventMaker)
     depends_on:
       kafka-init: { condition: service_completed_successfully }
       # arranca despues de los consumidores para no perder los primeros eventos
