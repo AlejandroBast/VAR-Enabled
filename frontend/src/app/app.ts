@@ -13,6 +13,13 @@ interface Partido {
   eventos: EventoPartido[];
 }
 
+interface Estadistica {
+  nombre: string;
+  local: number;
+  visitante: number;
+  porcentajeLocal: number;
+}
+
 interface FilaLineaDeTiempo {
   minuto: string;
   icono: string;
@@ -46,9 +53,28 @@ export class App implements OnInit, OnDestroy {
     return partidos.find((p) => p.marcador.match_id === this.idSeleccionado()) ?? partidos[0];
   });
 
+  /** Lo mas reciente arriba, como en una transmision en vivo. */
   protected readonly lineaDeTiempo = computed(() => {
     const partido = this.partidoSeleccionado();
-    return partido ? partido.eventos.map((evento) => this.describir(evento, partido)) : [];
+    return partido ? partido.eventos.map((evento) => this.describir(evento, partido)).reverse() : [];
+  });
+
+  /** Comparativa local vs visitante para el panel de estadisticas. */
+  protected readonly estadisticas = computed<Estadistica[]>(() => {
+    const partido = this.partidoSeleccionado();
+    if (!partido) return [];
+    const { marcador, eventos } = partido;
+    const contar = (tipo: string, team: 'home' | 'away') => eventos.filter((e) => e.event_type === tipo && e.team === team).length;
+    const fila = (nombre: string, local: number, visitante: number): Estadistica => {
+      const total = local + visitante;
+      return { nombre, local, visitante, porcentajeLocal: total ? (local / total) * 100 : 50 };
+    };
+    return [
+      fila('Goles', marcador.local, marcador.visitante),
+      fila('Faltas', marcador.faltas_local, marcador.faltas_visitante),
+      fila('Amarillas', contar('YELLOW_CARD', 'home'), contar('YELLOW_CARD', 'away')),
+      fila('Rojas', contar('RED_CARD', 'home'), contar('RED_CARD', 'away')),
+    ];
   });
 
   private socket?: WebSocket;
@@ -96,6 +122,15 @@ export class App implements OnInit, OnDestroy {
 
   protected etiquetaEstado(estado: EstadoPartido): string {
     return ETIQUETA_ESTADO[estado] ?? estado;
+  }
+
+  /** "Primer tiempo" / "Segundo tiempo" segun lo que ya paso en el partido. */
+  protected fase(partido: Partido): string {
+    const estado = partido.marcador.estado;
+    if (estado === 'POR_JUGAR') return 'Por jugar';
+    if (estado === 'ENTRETIEMPO') return 'Entretiempo';
+    if (estado === 'FINALIZADO') return 'Finalizado';
+    return partido.eventos.some((e) => e.event_type === 'SECOND_HALF_STARTED') ? 'Segundo tiempo' : 'Primer tiempo';
   }
 
   protected claseEstado(estado: EstadoPartido): string {
