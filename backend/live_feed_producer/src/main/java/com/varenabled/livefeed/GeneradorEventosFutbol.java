@@ -7,19 +7,21 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class GeneradorEventosFutbol {
 
-    private static final String ID_PARTIDO = "123";
+    private static final List<String> PARTIDOS = List.of("123", "456", "789");
     private static final String TOPICO = "match_events";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Random azar;
-    private final AtomicInteger contadorDeGoles = new AtomicInteger();
-    private volatile String idUltimoGolSinAnular;
+    private final Map<String, EstadoPartido> estados = new ConcurrentHashMap<>();
 
     @Autowired
     public GeneradorEventosFutbol(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -32,26 +34,73 @@ public class GeneradorEventosFutbol {
     }
 
     @Scheduled(fixedDelay = 10000)
-    public void generarEvento() {
-        if (idUltimoGolSinAnular != null && azar.nextBoolean()) {
-            enviarGolAnulado();
+    public void generarEventos() {
+        PARTIDOS.forEach(this::avanzar);
+    }
+
+    private void avanzar(String idPartido) {
+        EstadoPartido estado = estados.computeIfAbsent(idPartido, id -> new EstadoPartido());
+
+        if (estado.idGolEnRevision == null) {
+            if (azar.nextInt(4) == 0) {
+                enviarFalta(idPartido);
+            } else {
+                enviarGol(idPartido, estado);
+            }
+        } else if (!estado.varConsultado) {
+            enviarVarCheck(idPartido, estado);
+        } else if (azar.nextBoolean()) {
+            enviarGolAnulado(idPartido, estado);
         } else {
-            enviarGol();
+            enviarSigueElJuego(idPartido, estado);
         }
     }
 
-    private void enviarGol() {
-        String idEvento = "evt_g" + contadorDeGoles.incrementAndGet();
-        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL", "home", idEvento, null, null, Instant.now());
+    private void enviarGol(String idPartido, EstadoPartido estado) {
+        String equipo = azar.nextBoolean() ? "home" : "away";
+        String idEvento = idUnico("g");
+        EventoPartidoDto evento = new EventoPartidoDto(idPartido, "FOOTBALL", "GOAL", equipo, idEvento, null, null, Instant.now());
 
-        kafkaTemplate.send(TOPICO, ID_PARTIDO, evento);
-        idUltimoGolSinAnular = idEvento;
+        kafkaTemplate.send(TOPICO, idPartido, evento);
+        estado.idGolEnRevision = idEvento;
+        estado.varConsultado = false;
     }
 
-    private void enviarGolAnulado() {
-        EventoPartidoDto evento = new EventoPartidoDto(ID_PARTIDO, "FOOTBALL", "GOAL_ANNULLED", null, null, idUltimoGolSinAnular, null, Instant.now());
+    private void enviarFalta(String idPartido) {
+        EventoPartidoDto evento = new EventoPartidoDto(idPartido, "FOOTBALL", "FOUL", null, idUnico("f"), null, null, Instant.now());
 
-        kafkaTemplate.send(TOPICO, ID_PARTIDO, evento);
-        idUltimoGolSinAnular = null;
+        kafkaTemplate.send(TOPICO, idPartido, evento);
+    }
+
+    private void enviarVarCheck(String idPartido, EstadoPartido estado) {
+        EventoPartidoDto evento = new EventoPartidoDto(idPartido, "FOOTBALL", "VAR_CHECK", null, idUnico("v"), null, null, Instant.now());
+
+        kafkaTemplate.send(TOPICO, idPartido, evento);
+        estado.varConsultado = true;
+    }
+
+    private void enviarGolAnulado(String idPartido, EstadoPartido estado) {
+        EventoPartidoDto evento = new EventoPartidoDto(idPartido, "FOOTBALL", "GOAL_ANNULLED", null, idUnico("a"), estado.idGolEnRevision, null, Instant.now());
+
+        kafkaTemplate.send(TOPICO, idPartido, evento);
+        estado.idGolEnRevision = null;
+        estado.varConsultado = false;
+    }
+
+    private void enviarSigueElJuego(String idPartido, EstadoPartido estado) {
+        EventoPartidoDto evento = new EventoPartidoDto(idPartido, "FOOTBALL", "MATCH_CONTINUES", null, idUnico("c"), null, null, Instant.now());
+
+        kafkaTemplate.send(TOPICO, idPartido, evento);
+        estado.idGolEnRevision = null;
+        estado.varConsultado = false;
+    }
+
+    private String idUnico(String prefijo) {
+        return "evt_" + prefijo + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+    }
+
+    private static final class EstadoPartido {
+        private volatile String idGolEnRevision;
+        private volatile boolean varConsultado;
     }
 }

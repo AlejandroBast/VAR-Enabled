@@ -13,7 +13,11 @@ public class ImpresorDeAlertas {
 
     @RabbitListener(queues = ConfiguracionRabbitMQ.COLA_ALERTAS)
     public void escuchar(AlertaPartidoDto alerta) {
-        log.info("[ALERTA] partido={} evento={} hora={} -> {}",
+        log.info(formatear(alerta));
+    }
+
+    String formatear(AlertaPartidoDto alerta) {
+        return "[ALERTA] partido=%s evento=%s hora=%s -> %s".formatted(
                 alerta.matchId(), alerta.eventId(), alerta.timestamp(), alerta.mensaje());
     }
 }
