@@ -1,0 +1,4 @@
+# Los scripts de bash y los archivos de aws/ deben quedar con saltos de linea LF
+# aunque se clonen en Windows: con CRLF fallan en la EC2 y en los contenedores.
+*.sh text eol=lf
+aws/** text eol=lf
