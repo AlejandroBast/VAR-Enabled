@@ -28,6 +28,7 @@
         <module>dashboard_backend</module>
         <module>betting_suspension_service</module>
         <module>betting_worker</module>
+        <module>historical_archiver</module>
     </modules>
 
     <dependencyManagement>
