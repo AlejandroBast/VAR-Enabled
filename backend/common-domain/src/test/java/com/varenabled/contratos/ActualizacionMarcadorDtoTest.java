@@ -9,12 +9,12 @@ class ActualizacionMarcadorDtoTest {
     @Test
     void noPermiteUnMatchIdVacio() {
         assertThrows(IllegalArgumentException.class,
-                () -> new ActualizacionMarcadorDto("", 1, 0));
+                () -> new ActualizacionMarcadorDto("", 1, 0, 10, 0));
     }
 
     @Test
     void noPermiteValoresNegativos() {
         assertThrows(IllegalArgumentException.class,
-                () -> new ActualizacionMarcadorDto("123", -1, 0));
+                () -> new ActualizacionMarcadorDto("123", -1, 0, 10, 0));
     }
 }
