@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 
 interface Marcador {
-  matchId: string;
+  match_id: string;
   local: number;
   visitante: number;
 }
@@ -52,9 +52,9 @@ export class App implements OnInit, OnDestroy {
   private actualizarMarcador(mensaje: string): void {
     try {
       const marcador = JSON.parse(mensaje) as Marcador;
-      if (!marcador.matchId || marcador.local < 0 || marcador.visitante < 0) return;
+      if (!marcador.match_id || marcador.local < 0 || marcador.visitante < 0) return;
       this.partidos.update((partidos) => {
-        const indice = partidos.findIndex((partido) => partido.matchId === marcador.matchId);
+        const indice = partidos.findIndex((partido) => partido.match_id === marcador.match_id);
         if (indice === -1) return [...partidos, marcador];
         return partidos.map((partido, i) => i === indice ? marcador : partido);
       });
