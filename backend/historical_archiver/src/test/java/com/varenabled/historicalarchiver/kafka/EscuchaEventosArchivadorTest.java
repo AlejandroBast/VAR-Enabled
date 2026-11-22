@@ -41,7 +41,9 @@ class EscuchaEventosArchivadorTest {
         kafkaTemplate.send("match_events", "123",
                 new EventoPartidoDto("123", "FOOTBALL", "GOAL_ANNULLED", null, null, "evt_g1", null, momentoDelGol.plusSeconds(5)));
 
-        esperarHasta(() -> revisionesRepositorio.count() == 1);
+        esperarHasta(() -> marcadorRepositorio.findById("123")
+                .map(marcador -> marcador.getGolesLocal() == 0)
+                .orElse(false));
 
         assertEquals(2, eventosRepositorio.count());
         assertEquals(1, revisionesRepositorio.count());
