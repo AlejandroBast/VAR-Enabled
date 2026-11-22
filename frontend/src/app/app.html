@@ -16,6 +16,7 @@
       @for (partido of partidos(); track partido.match_id) {
         <article class="partido">
           <p class="id-partido">Partido {{ partido.match_id }}</p>
+          <p class="minuto">{{ partido.minuto_extra ? partido.minuto + "+" + partido.minuto_extra : partido.minuto }}'</p>
           <div class="marcador" aria-label="Marcador">
             <span>{{ partido.local }}</span><b>—</b><span>{{ partido.visitante }}</span>
           </div>

@@ -4,6 +4,8 @@ interface Marcador {
   match_id: string;
   local: number;
   visitante: number;
+  minuto: number;
+  minuto_extra: number;
 }
 
 @Component({
