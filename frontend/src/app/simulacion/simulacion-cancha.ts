@@ -72,8 +72,8 @@ const rebote = (p: number) => { const c = 1.70158; return 1 + (c + 1) * Math.pow
   template: `<canvas #lienzo class="cancha" [attr.width]="ancho" [attr.height]="alto" role="img"
     aria-label="Simulación visual del partido con jugadores y balón"></canvas>`,
   styles: `
-    :host { display: block; margin: 24px auto 0; max-width: 880px; }
-    .cancha { aspect-ratio: 1000 / 570; background: #0b1510; border: 2px solid var(--borde-fuerte); border-radius: 10px; display: block; height: auto; width: 100%; }
+    :host { display: block; }
+    .cancha { aspect-ratio: 1000 / 570; background: #0b1510; display: block; height: auto; width: 100%; }
   `,
 })
 export class SimulacionCancha implements AfterViewInit, OnDestroy {
