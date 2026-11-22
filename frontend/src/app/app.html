@@ -19,6 +19,8 @@
         <span class="centro">
           @if (partido.marcador.estado === 'EN_REVISION') {
             <span class="insignia revision">Revisión VAR</span>
+          } @else if (partido.marcador.estado === 'FINALIZADO') {
+            <span class="insignia finalizado">Finalizado</span>
           } @else {
             <span class="insignia en-juego">En juego</span>
           }
@@ -39,6 +41,8 @@
         <h2>Partido {{ partido.marcador.match_id }}</h2>
         @if (partido.marcador.estado === 'EN_REVISION') {
           <span class="insignia grande revision">Revisión VAR en curso</span>
+        } @else if (partido.marcador.estado === 'FINALIZADO') {
+          <span class="insignia grande finalizado">Finalizado</span>
         } @else {
           <span class="insignia grande en-juego">En juego</span>
         }

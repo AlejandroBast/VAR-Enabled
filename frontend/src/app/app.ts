@@ -8,7 +8,7 @@ interface Marcador {
   visitante: number;
   minuto: number;
   minuto_extra: number;
-  estado: 'EN_JUEGO' | 'EN_REVISION';
+  estado: 'EN_JUEGO' | 'EN_REVISION' | 'FINALIZADO';
 }
 
 /** Lo que manda dashboard_backend por cada evento del partido (AlertaPartidoDto). */
@@ -131,6 +131,10 @@ export class App implements OnInit, OnDestroy {
     const equipo = evento.team === 'home' ? 'local' : evento.team === 'away' ? 'visitante' : null;
 
     switch (evento.event_type) {
+      case 'MATCH_STARTED':
+        return { minuto, icono: '▶', clase: 'inicio', titulo: 'Comienza el partido', descripcion: 'El reloj empieza a correr.', anulado: false };
+      case 'MATCH_ENDED':
+        return { minuto, icono: '■', clase: 'final', titulo: 'Final del partido', descripcion: 'El árbitro pita el final.', anulado: false };
       case 'GOAL': {
         const anulado = eventos.some((e) => e.event_type === 'GOAL_ANNULLED' && e.annuls_event_id === evento.event_id);
         return { minuto, icono: '⚽', clase: 'gol', titulo: anulado ? 'Gol (anulado)' : 'Gol',
