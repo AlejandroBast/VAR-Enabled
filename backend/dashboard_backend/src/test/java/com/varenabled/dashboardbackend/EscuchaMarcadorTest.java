@@ -21,7 +21,7 @@ class EscuchaMarcadorTest {
     void transmiteLaActualizacionDelMarcadorComoJson() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         EscuchaMarcador listener = new EscuchaMarcador(handler, mapper);
-        ActualizacionMarcadorDto actualizacion = new ActualizacionMarcadorDto("123", 1, 0);
+        ActualizacionMarcadorDto actualizacion = new ActualizacionMarcadorDto("123", 1, 0, 23, 0);
 
         listener.escuchar(actualizacion);
 

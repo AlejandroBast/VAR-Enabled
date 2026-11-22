@@ -23,11 +23,11 @@ class PublicadorMarcadorRabbitTest {
 
     @Test
     void publicaElMarcadorEnElExchangeConLaRoutingKeyDelPartido() {
-        adaptador.publicarMarcador(new IdPartido("123"), new Marcador(1, 0));
+        adaptador.publicarMarcador(new IdPartido("123"), new Marcador(1, 0), 23, 0);
 
         verify(rabbitTemplate).convertAndSend(
                 ConfiguracionRabbitMQ.EXCHANGE_MARCADOR,
                 "score.match_123",
-                new ActualizacionMarcadorDto("123", 1, 0));
+                new ActualizacionMarcadorDto("123", 1, 0, 23, 0));
     }
 }
