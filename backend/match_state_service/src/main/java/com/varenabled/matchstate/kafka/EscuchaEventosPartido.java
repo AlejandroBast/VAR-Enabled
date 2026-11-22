@@ -5,16 +5,25 @@ import com.varenabled.contratos.EventoPartidoDto;
 import com.varenabled.dominio.Equipo;
 import com.varenabled.dominio.IdEvento;
 import com.varenabled.dominio.IdPartido;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
-public class EscuchaEventosPartido {
+public class EscuchaEventosPartido implements ConsumerSeekAware {
 
     private final ServicioMarcadorFutbol servicio;
 
     public EscuchaEventosPartido(ServicioMarcadorFutbol servicio) {
         this.servicio = servicio;
+    }
+
+    @Override
+    public void onPartitionsAssigned(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
+        assignments.keySet().forEach(particion -> callback.seekToBeginning(particion.topic(), particion.partition()));
     }
 
     @KafkaListener(topics = "match_events", groupId = "match-state-service")
