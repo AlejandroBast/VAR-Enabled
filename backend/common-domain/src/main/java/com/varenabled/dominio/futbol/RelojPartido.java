@@ -7,8 +7,8 @@ import java.time.Instant;
  * Reloj de un partido en vivo: el minuto sale del tiempo real que paso desde el inicio,
  * nadie lo escribe a mano.
  *
- * Orden del partido: 1..45, luego 45+1..45+N si se anuncio tiempo anadido,
- * luego 46..90, luego 90+1..90+N, y ahi termina.
+ * Primer tiempo: 1..45, y 45+1..45+N si se anuncio tiempo anadido. Despues queda en
+ * ENTRETIEMPO hasta que se inicia el segundo tiempo: 46..90, 90+1..90+N, y termina.
  */
 public class RelojPartido {
 
@@ -18,6 +18,7 @@ public class RelojPartido {
 
     private final Instant inicio;
     private final Duration duracionMinuto;
+    private Instant inicioSegundoTiempo;
     private Integer tiempoAnadidoPrimeraMitad;
     private Integer tiempoAnadidoSegundaMitad;
 
@@ -33,33 +34,48 @@ public class RelojPartido {
     }
 
     public MinutoPartido minutoEn(Instant ahora) {
-        // Minutos "jugados" contando desde 1: en el primer minuto real va el minuto 1.
-        long minutosCorridos = Duration.between(inicio, ahora).toMillis() / duracionMinuto.toMillis() + 1;
         int anadidoPrimera = tiempoAnadidoPrimeraMitad == null ? 0 : tiempoAnadidoPrimeraMitad;
         int anadidoSegunda = tiempoAnadidoSegundaMitad == null ? 0 : tiempoAnadidoSegundaMitad;
+        int duracionPrimerTiempo = FIN_PRIMERA_MITAD + anadidoPrimera;
 
-        if (minutosCorridos <= FIN_PRIMERA_MITAD) {
-            return new MinutoPartido((int) minutosCorridos, 0, false);
-        }
-        if (minutosCorridos <= FIN_PRIMERA_MITAD + anadidoPrimera) {
-            return new MinutoPartido(FIN_PRIMERA_MITAD, (int) (minutosCorridos - FIN_PRIMERA_MITAD), false);
+        if (inicioSegundoTiempo == null) {
+            // En el primer minuto real va el minuto 1.
+            int corrido = minutosDesde(inicio, ahora) + 1;
+            if (corrido <= FIN_PRIMERA_MITAD) {
+                return new MinutoPartido(corrido, 0, FasePartido.PRIMER_TIEMPO, corrido);
+            }
+            if (corrido <= duracionPrimerTiempo) {
+                return new MinutoPartido(FIN_PRIMERA_MITAD, corrido - FIN_PRIMERA_MITAD, FasePartido.PRIMER_TIEMPO, corrido);
+            }
+            return new MinutoPartido(FIN_PRIMERA_MITAD, anadidoPrimera, FasePartido.ENTRETIEMPO, duracionPrimerTiempo);
         }
 
-        long minutoSegundaMitad = minutosCorridos - anadidoPrimera;
-        if (minutoSegundaMitad <= FIN_SEGUNDA_MITAD) {
-            return new MinutoPartido((int) minutoSegundaMitad, 0, false);
+        // Segundo tiempo: arranca en el 46.
+        int minuto = minutosDesde(inicioSegundoTiempo, ahora) + FIN_PRIMERA_MITAD + 1;
+        if (minuto <= FIN_SEGUNDA_MITAD) {
+            return new MinutoPartido(minuto, 0, FasePartido.SEGUNDO_TIEMPO, duracionPrimerTiempo + minuto - FIN_PRIMERA_MITAD);
         }
-        if (minutoSegundaMitad <= FIN_SEGUNDA_MITAD + anadidoSegunda) {
-            return new MinutoPartido(FIN_SEGUNDA_MITAD, (int) (minutoSegundaMitad - FIN_SEGUNDA_MITAD), false);
+        int extra = minuto - FIN_SEGUNDA_MITAD;
+        if (extra <= anadidoSegunda) {
+            return new MinutoPartido(FIN_SEGUNDA_MITAD, extra, FasePartido.SEGUNDO_TIEMPO,
+                    duracionPrimerTiempo + FIN_PRIMERA_MITAD + extra);
         }
-        return new MinutoPartido(FIN_SEGUNDA_MITAD, anadidoSegunda, true);
+        return new MinutoPartido(FIN_SEGUNDA_MITAD, anadidoSegunda, FasePartido.FINALIZADO,
+                duracionPrimerTiempo + FIN_PRIMERA_MITAD + anadidoSegunda);
+    }
+
+    public void iniciarSegundoTiempo(Instant ahora) {
+        if (minutoEn(ahora).fase() != FasePartido.ENTRETIEMPO) {
+            throw new ReglaPartidoException("El segundo tiempo solo se puede iniciar durante el entretiempo");
+        }
+        inicioSegundoTiempo = ahora;
     }
 
     public void anunciarTiempoAnadido(Instant ahora, int minutosAgregados) {
         MinutoPartido actual = minutoEn(ahora);
-        boolean enElUltimoMinuto = actual.minutoExtra() == 0
+        boolean enElUltimoMinuto = actual.fase().seEstaJugando() && actual.minutoExtra() == 0
                 && (actual.minuto() == FIN_PRIMERA_MITAD || actual.minuto() == FIN_SEGUNDA_MITAD);
-        if (!enElUltimoMinuto || actual.finalizado()) {
+        if (!enElUltimoMinuto) {
             throw new MinutoInvalidoException("El tiempo añadido solo se puede anunciar durante el minuto "
                     + FIN_PRIMERA_MITAD + " o el " + FIN_SEGUNDA_MITAD + " (ahora va el " + actual.minuto()
                     + (actual.minutoExtra() > 0 ? "+" + actual.minutoExtra() : "") + "')");
@@ -79,5 +95,9 @@ public class RelojPartido {
             }
             tiempoAnadidoSegundaMitad = minutosAgregados;
         }
+    }
+
+    private int minutosDesde(Instant desde, Instant ahora) {
+        return (int) (Duration.between(desde, ahora).toMillis() / duracionMinuto.toMillis());
     }
 }

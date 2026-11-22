@@ -19,45 +19,78 @@ class RelojPartidoTest {
         return INICIO.plus(Duration.ofMinutes(minutosReales)).plusSeconds(segundos);
     }
 
+    private MinutoPartido primerTiempo(int minuto, int extra, int jugados) {
+        return new MinutoPartido(minuto, extra, FasePartido.PRIMER_TIEMPO, jugados);
+    }
+
+    private MinutoPartido segundoTiempo(int minuto, int extra, int jugados) {
+        return new MinutoPartido(minuto, extra, FasePartido.SEGUNDO_TIEMPO, jugados);
+    }
+
     @Test
     void apenasEmpiezaElPartidoVaEnElMinutoUno() {
-        assertEquals(new MinutoPartido(1, 0, false), reloj.minutoEn(INICIO));
+        assertEquals(primerTiempo(1, 0, 1), reloj.minutoEn(INICIO));
     }
 
     @Test
     void elMinutoAvanzaConElTiempoReal() {
-        assertEquals(new MinutoPartido(1, 0, false), reloj.minutoEn(aLos(0, 59)));
-        assertEquals(new MinutoPartido(2, 0, false), reloj.minutoEn(aLos(1, 0)));
-        assertEquals(new MinutoPartido(23, 0, false), reloj.minutoEn(aLos(22, 30)));
+        assertEquals(primerTiempo(1, 0, 1), reloj.minutoEn(aLos(0, 59)));
+        assertEquals(primerTiempo(2, 0, 2), reloj.minutoEn(aLos(1, 0)));
+        assertEquals(primerTiempo(23, 0, 23), reloj.minutoEn(aLos(22, 30)));
     }
 
     @Test
-    void sinTiempoAnadidoDespuesDel45SigueEl46() {
-        assertEquals(new MinutoPartido(45, 0, false), reloj.minutoEn(aLos(44, 0)));
-        assertEquals(new MinutoPartido(46, 0, false), reloj.minutoEn(aLos(45, 0)));
+    void sinTiempoAnadidoDespuesDel45VieneElEntretiempo() {
+        assertEquals(primerTiempo(45, 0, 45), reloj.minutoEn(aLos(44, 0)));
+        assertEquals(new MinutoPartido(45, 0, FasePartido.ENTRETIEMPO, 45), reloj.minutoEn(aLos(45, 0)));
+        assertEquals(new MinutoPartido(45, 0, FasePartido.ENTRETIEMPO, 45), reloj.minutoEn(aLos(70, 0)));
     }
 
     @Test
-    void conTiempoAnadidoElRelojSeQuedaEnEl45YCuentaLosExtra() {
+    void conTiempoAnadidoElRelojCuentaLosExtraAntesDelEntretiempo() {
         reloj.anunciarTiempoAnadido(aLos(44, 10), 3);
 
-        assertEquals(new MinutoPartido(45, 1, false), reloj.minutoEn(aLos(45, 0)));
-        assertEquals(new MinutoPartido(45, 3, false), reloj.minutoEn(aLos(47, 0)));
-        assertEquals(new MinutoPartido(46, 0, false), reloj.minutoEn(aLos(48, 0)));
+        assertEquals(primerTiempo(45, 1, 46), reloj.minutoEn(aLos(45, 0)));
+        assertEquals(primerTiempo(45, 3, 48), reloj.minutoEn(aLos(47, 0)));
+        assertEquals(FasePartido.ENTRETIEMPO, reloj.minutoEn(aLos(48, 0)).fase());
+    }
+
+    @Test
+    void elSegundoTiempoArrancaEnEl46CuandoSeInicia() {
+        reloj.iniciarSegundoTiempo(aLos(60, 0));
+
+        assertEquals(segundoTiempo(46, 0, 46), reloj.minutoEn(aLos(60, 0)));
+        assertEquals(segundoTiempo(50, 0, 50), reloj.minutoEn(aLos(64, 0)));
+    }
+
+    @Test
+    void losMinutosJugadosSumanElTiempoAnadidoDelPrimerTiempo() {
+        reloj.anunciarTiempoAnadido(aLos(44, 0), 2);
+        reloj.iniciarSegundoTiempo(aLos(60, 0));
+
+        assertEquals(segundoTiempo(46, 0, 48), reloj.minutoEn(aLos(60, 0)));
+    }
+
+    @Test
+    void noSePuedeIniciarElSegundoTiempoSiNoEsEntretiempo() {
+        assertThrows(ReglaPartidoException.class, () -> reloj.iniciarSegundoTiempo(aLos(20, 0)));
     }
 
     @Test
     void elPartidoTerminaAlCumplirElNoventaMasElTiempoAnadido() {
+        reloj.iniciarSegundoTiempo(aLos(45, 0));
         reloj.anunciarTiempoAnadido(aLos(89, 0), 2);
 
-        assertEquals(new MinutoPartido(90, 2, false), reloj.minutoEn(aLos(91, 0)));
-        assertEquals(new MinutoPartido(90, 2, true), reloj.minutoEn(aLos(92, 0)));
+        assertEquals(segundoTiempo(90, 2, 92), reloj.minutoEn(aLos(91, 0)));
+        assertEquals(new MinutoPartido(90, 2, FasePartido.FINALIZADO, 92), reloj.minutoEn(aLos(92, 0)));
     }
 
     @Test
     void sinTiempoAnadidoElPartidoTerminaDespuesDelNoventa() {
-        assertEquals(new MinutoPartido(90, 0, false), reloj.minutoEn(aLos(89, 59)));
-        assertEquals(new MinutoPartido(90, 0, true), reloj.minutoEn(aLos(90, 0)));
+        reloj.iniciarSegundoTiempo(aLos(45, 0));
+
+        assertEquals(segundoTiempo(90, 0, 90), reloj.minutoEn(aLos(89, 59)));
+        assertEquals(FasePartido.FINALIZADO, reloj.minutoEn(aLos(90, 0)).fase());
     }
 
     @Test
@@ -79,9 +112,7 @@ class RelojPartidoTest {
     }
 
     @Test
-    void noSePuedeAnunciarTiempoAnadidoCuandoYaSeEstaJugando() {
-        reloj.anunciarTiempoAnadido(aLos(44, 0), 2);
-
-        assertThrows(MinutoInvalidoException.class, () -> reloj.anunciarTiempoAnadido(aLos(45, 30), 3));
+    void noSePuedeAnunciarTiempoAnadidoEnElEntretiempo() {
+        assertThrows(MinutoInvalidoException.class, () -> reloj.anunciarTiempoAnadido(aLos(50, 0), 3));
     }
 }

@@ -110,6 +110,18 @@ class ControlVarTest {
     }
 
     @Test
+    void soloSeOfrecenParaRevisarLasJugadasDentroDeSusDosMinutos() {
+        control.registrarJugada(gol, TipoJugada.GOL, 38);
+        control.registrarJugada(falta, TipoJugada.FALTA, 40);
+
+        assertEquals(List.of(gol, falta), control.jugadasRevisables(40));
+        assertEquals(List.of(falta), control.jugadasRevisables(41));
+
+        control.abrirRevision(falta, 41);
+        assertEquals(List.of(), control.jugadasRevisables(41));
+    }
+
+    @Test
     void alTerminarElTiempoTodoLoPendienteQuedaFirme() {
         control.registrarJugada(gol, TipoJugada.GOL, 45);
 

@@ -48,6 +48,20 @@ public class ControlVar {
         enRevision = jugada;
     }
 
+    /** Goles y faltas que todavia se pueden mandar a revision en este minuto. */
+    public List<IdEvento> jugadasRevisables(int minutoJugadoActual) {
+        if (enRevision != null) {
+            return List.of();
+        }
+        List<IdEvento> revisables = new ArrayList<>();
+        for (JugadaRevisable jugada : enVentana.values()) {
+            if (minutoJugadoActual <= jugada.minutoJugado() + MINUTOS_PARA_REVISAR) {
+                revisables.add(jugada.idEvento());
+            }
+        }
+        return revisables;
+    }
+
     public boolean hayRevisionAbierta() {
         return enRevision != null;
     }
