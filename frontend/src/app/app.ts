@@ -27,7 +27,19 @@ interface FilaLineaDeTiempo {
   titulo: string;
   descripcion: string;
   anulado: boolean;
+  /** Lado de la linea de tiempo: local a la izquierda, visitante a la derecha, null al centro. */
+  lado: 'home' | 'away' | null;
 }
+
+type Pestana = 'campo' | 'eventos' | 'estadisticas';
+type FiltroJugadas = 'todas' | 'goles' | 'tarjetas' | 'var';
+
+const CLASES_FILTRO: Record<FiltroJugadas, string[] | null> = {
+  todas: null,
+  goles: ['gol'],
+  tarjetas: ['amarilla', 'roja'],
+  var: ['revision', 'confirmada', 'anulacion'],
+};
 
 const ETIQUETA_ESTADO: Record<EstadoPartido, string> = {
   POR_JUGAR: 'Por jugar',
@@ -41,22 +53,37 @@ const ETIQUETA_ESTADO: Record<EstadoPartido, string> = {
   selector: 'app-root',
   imports: [NgTemplateOutlet, SimulacionCancha],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css', './app-paneles.css']
 })
 export class App implements OnInit, OnDestroy {
   protected readonly partidos = signal<Partido[]>([]);
   protected readonly idSeleccionado = signal<string | null>(null);
   protected readonly conectado = signal(false);
+  protected readonly pestana = signal<Pestana>('campo');
+  protected readonly soloEnVivo = signal(false);
+  protected readonly filtroJugadas = signal<FiltroJugadas>('todas');
+  protected readonly enVivo = computed(() => this.partidos().filter((p) => ['EN_JUEGO', 'EN_REVISION'].includes(p.marcador.estado)).length);
 
   protected readonly partidoSeleccionado = computed(() => {
     const partidos = this.partidos();
     return partidos.find((p) => p.marcador.match_id === this.idSeleccionado()) ?? partidos[0];
   });
 
+  /** Lista de la izquierda, con el filtro "En vivo" aplicado. */
+  protected readonly partidosVisibles = computed(() => this.soloEnVivo()
+    ? this.partidos().filter((p) => ['EN_JUEGO', 'EN_REVISION'].includes(p.marcador.estado))
+    : this.partidos());
+
   /** Lo mas reciente arriba, como en una transmision en vivo. */
   protected readonly lineaDeTiempo = computed(() => {
     const partido = this.partidoSeleccionado();
     return partido ? partido.eventos.map((evento) => this.describir(evento, partido)).reverse() : [];
+  });
+
+  /** Ultimas jugadas importantes para la tarjeta "Jugadas destacadas". */
+  protected readonly jugadasDestacadas = computed(() => {
+    const clases = CLASES_FILTRO[this.filtroJugadas()] ?? ['gol', 'amarilla', 'roja', 'revision', 'confirmada', 'anulacion', 'falta'];
+    return this.lineaDeTiempo().filter((f) => clases.includes(f.clase)).slice(0, 5);
   });
 
   /** Comparativa local vs visitante para el panel de estadisticas. */
@@ -89,6 +116,47 @@ export class App implements OnInit, OnDestroy {
 
   protected seleccionar(matchId: string): void {
     this.idSeleccionado.set(matchId);
+  }
+
+  protected cambiarPestana(pestana: Pestana): void {
+    this.pestana.set(pestana);
+  }
+
+  protected alternarEnVivo(): void {
+    this.soloEnVivo.update((v) => !v);
+  }
+
+  protected filtrarJugadas(filtro: FiltroJugadas): void {
+    this.filtroJugadas.set(filtro);
+  }
+
+  /** Flechas del partido destacado: pasa al anterior / siguiente de la lista. */
+  protected moverDestacado(paso: 1 | -1): void {
+    const partidos = this.partidos();
+    const actual = this.partidoSeleccionado();
+    if (!actual || partidos.length < 2) return;
+    const i = partidos.indexOf(actual);
+    this.idSeleccionado.set(partidos[(i + paso + partidos.length) % partidos.length].marcador.match_id);
+  }
+
+  /** Texto corto de estado para la lista: minuto en vivo, "Final", "Desc."... */
+  protected estadoCorto(marcador: Marcador): string {
+    switch (marcador.estado) {
+      case 'POR_JUGAR': return 'Por jugar';
+      case 'ENTRETIEMPO': return 'Descanso';
+      case 'FINALIZADO': return 'Final';
+      case 'EN_REVISION': return 'VAR';
+      default: return this.minutoTexto(marcador.minuto, marcador.minuto_extra);
+    }
+  }
+
+  protected textoApuestas(marcador: Marcador): string {
+    switch (marcador.apuestas) {
+      case 'ABIERTAS': return 'Se aceptan apuestas en este partido.';
+      case 'DETENIDAS': return 'Suspendidas mientras el VAR revisa la jugada.';
+      case 'CERRADAS': return 'El mercado de este partido está cerrado.';
+      default: return 'Todavía no hay información de apuestas.';
+    }
   }
 
   protected reconectar(): void {
@@ -191,7 +259,9 @@ export class App implements OnInit, OnDestroy {
   }
 
   private fila(evento: EventoPartido, icono: string, clase: string, titulo: string, descripcion: string, anulado = false): FilaLineaDeTiempo {
-    return { minuto: this.minutoTexto(evento.minuto, evento.minuto_extra), icono, clase, titulo, descripcion, anulado };
+    const conLado = ['GOAL', 'FOUL', 'YELLOW_CARD', 'RED_CARD'].includes(evento.event_type);
+    return { minuto: this.minutoTexto(evento.minuto, evento.minuto_extra), icono, clase, titulo, descripcion, anulado,
+      lado: conLado ? evento.team : null };
   }
 
   private describir(evento: EventoPartido, partido: Partido): FilaLineaDeTiempo {
