@@ -27,46 +27,6 @@
     </div>
   </header>
 
-<<<<<<< HEAD
-    @for (partido of partidos(); track partido.marcador.match_id) {
-      <button type="button" class="tarjeta"
-              [class.seleccionada]="partido === partidoSeleccionado()"
-              (click)="seleccionar(partido.marcador.match_id)">
-        <span class="equipo-mini">
-          @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
-            <img class="escudo" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
-          } @else {
-            <ng-container [ngTemplateOutlet]="escudo" />
-          }
-          {{ abreviatura(nombreLocal(partido.marcador)) }}
-        </span>
-        <span class="centro">
-          <span [class]="'insignia ' + claseEstado(partido.marcador.estado)">{{ etiquetaEstado(partido.marcador.estado) }}</span>
-          <span class="minuto">{{ partido.marcador.estado === 'POR_JUGAR' ? '--' : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
-          <span class="marcador-mini">{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
-          <span class="id">{{ titulo(partido.marcador) }}</span>
-        </span>
-        <span class="equipo-mini">
-          @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
-            <img class="escudo" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
-          } @else {
-            <ng-container [ngTemplateOutlet]="escudo" />
-          }
-          {{ abreviatura(nombreVisitante(partido.marcador)) }}
-        </span>
-      </button>
-    } @empty {
-      <p class="lista-vacia">Aún no hay partidos.</p>
-    }
-  </aside>
-
-  <section class="detalle">
-    @if (partidoSeleccionado(); as partido) {
-      @if (partido.marcador.apuestas) {
-        <div [class]="'apuestas ' + partido.marcador.apuestas.toLowerCase()" role="status" aria-live="polite">
-          <span class="punto" aria-hidden="true"></span>
-          Apuestas {{ partido.marcador.apuestas.toLowerCase() }}
-=======
   <main class="contenido">
     <!-- ============ Columna izquierda ============ -->
     <aside class="columna-lista">
@@ -80,7 +40,6 @@
             En vivo @if (enVivo()) { · {{ enVivo() }} }
           </button>
           <span class="chip-num">{{ partidos().length }} partidos</span>
->>>>>>> 29e4f6e526d5724529b23703b00438d4c2687d7d
         </div>
 
         <div class="competicion-fila">
@@ -95,7 +54,11 @@
                     [class.seleccionada]="partido === partidoSeleccionado()"
                     [attr.aria-current]="partido === partidoSeleccionado() ? 'true' : null"
                     (click)="seleccionar(partido.marcador.match_id)">
-              <span class="crest sm local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
+                <img class="escudo-equipo sm" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
+              } @else {
+                <span class="crest sm local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              }
               <span class="nombre">{{ nombreLocal(partido.marcador) }}</span>
               <span class="centro-fila">
                 @if (partido.marcador.estado === 'POR_JUGAR') { <b class="vs-mini">vs</b> }
@@ -103,7 +66,11 @@
                 <small [class]="'estado-mini ' + claseEstado(partido.marcador.estado)">{{ estadoCorto(partido.marcador) }}</small>
               </span>
               <span class="nombre derecha">{{ nombreVisitante(partido.marcador) }}</span>
-              <span class="crest sm visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
+                <img class="escudo-equipo sm" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
+              } @else {
+                <span class="crest sm visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              }
             </button>
           } @empty {
             <p class="lista-vacia">{{ soloEnVivo() ? 'No hay partidos en vivo ahora mismo.' : 'Aún no hay partidos. Créalos desde el EventMaker.' }}</p>
@@ -142,7 +109,11 @@
 
           <div class="hero-equipos">
             <div class="hero-equipo">
-              <span class="crest lg local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
+                <img class="escudo-equipo lg" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
+              } @else {
+                <span class="crest lg local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              }
               <span class="hero-nombre"><b>{{ nombreLocal(partido.marcador) }}</b><small>Local</small></span>
             </div>
             <div class="dominio">
@@ -157,7 +128,11 @@
             </div>
             <div class="hero-equipo derecha">
               <span class="hero-nombre"><b>{{ nombreVisitante(partido.marcador) }}</b><small>Visitante</small></span>
-              <span class="crest lg visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
+                <img class="escudo-equipo lg" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
+              } @else {
+                <span class="crest lg visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              }
             </div>
           </div>
 
@@ -190,29 +165,6 @@
           </p>
         }
 
-<<<<<<< HEAD
-        <div class="enfrentamiento">
-          <div class="equipo">
-            @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
-              <img class="escudo" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
-            } @else {
-              <ng-container [ngTemplateOutlet]="escudo" />
-            }
-            <span>{{ nombreLocal(partido.marcador) }}</span>
-          </div>
-          <div class="marcador" [class.en-revision]="partido.marcador.estado === 'EN_REVISION'">
-            {{ partido.marcador.local }} - {{ partido.marcador.visitante }}
-          </div>
-          <div class="equipo">
-            @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
-              <img class="escudo" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
-            } @else {
-              <ng-container [ngTemplateOutlet]="escudo" />
-            }
-            <span>{{ nombreVisitante(partido.marcador) }}</span>
-          </div>
-        </div>
-=======
         <!-- Panel de la pestaña elegida. La cancha queda montada para no perder su animacion. -->
         <article class="card panel-accion">
           <div [hidden]="pestana() !== 'campo'">
@@ -228,7 +180,6 @@
               <span class="mini-pill">{{ partido.marcador.estado === 'POR_JUGAR' ? "--'" : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} · {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
             </div>
           </div>
->>>>>>> 29e4f6e526d5724529b23703b00438d4c2687d7d
 
           @if (pestana() === 'eventos') {
             <div class="panel-pestana" role="tabpanel">
