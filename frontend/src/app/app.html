@@ -1,93 +1,288 @@
-<ng-template #escudo>
-  <svg class="escudo" viewBox="0 0 40 46" aria-hidden="true">
-    <path d="M20 2 L37 8 V22 C37 33 29 41 20 44 C11 41 3 33 3 22 V8 Z" />
-  </svg>
+<ng-template #detalleEvento let-fila>
+  <span [class]="'fila-icono ' + fila.clase">{{ fila.icono }}</span>
+  <span class="fila-texto">
+    <strong>{{ fila.titulo }}</strong>
+    <span>{{ fila.descripcion }}</span>
+  </span>
 </ng-template>
 
-<main class="dashboard">
-  <aside class="lista">
-    <header class="lista-encabezado">
-      <h1>Partidos</h1>
-      <span class="conexion" [class.activa]="conectado()" [title]="conectado() ? 'Conectado en tiempo real' : 'Reconectando...'"></span>
-    </header>
+<div class="app">
+  <!-- ============ Cabecera ============ -->
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 21h8M12 17v4M9.5 9.5l2 2 3.5-3.5" /></svg>
+      </span>
+      <span class="logo-texto">
+        <b>VAR <span>-ENABLED</span></b>
+        <small>Live match engine 2.0</small>
+      </span>
+    </div>
+    <div class="topbar-derecha">
+      <span class="pill-estado" [class.ok]="conectado()" role="status"
+            [title]="conectado() ? 'Conectado en tiempo real' : 'Reconectando...'">
+        <span class="punto" aria-hidden="true"></span>{{ conectado() ? 'Conectado' : 'Reconectando…' }}
+      </span>
+      <span class="pill-estado destacado-pill"><span aria-hidden="true">★</span> Partido destacado</span>
+    </div>
+  </header>
 
-    @for (partido of partidos(); track partido.marcador.match_id) {
-      <button type="button" class="tarjeta"
-              [class.seleccionada]="partido === partidoSeleccionado()"
-              (click)="seleccionar(partido.marcador.match_id)">
-        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
-        <span class="centro">
-          <span [class]="'insignia ' + claseEstado(partido.marcador.estado)">{{ etiquetaEstado(partido.marcador.estado) }}</span>
-          <span class="minuto">{{ partido.marcador.estado === 'POR_JUGAR' ? '--' : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</span>
-          <span class="marcador-mini">{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
-          <span class="id">{{ titulo(partido.marcador) }}</span>
-        </span>
-        <span class="equipo-mini"><ng-container [ngTemplateOutlet]="escudo" />{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
-      </button>
-    } @empty {
-      <p class="lista-vacia">Aún no hay partidos.</p>
-    }
-  </aside>
-
-  <section class="detalle">
-    @if (partidoSeleccionado(); as partido) {
-      @if (partido.marcador.apuestas) {
-        <div [class]="'apuestas ' + partido.marcador.apuestas.toLowerCase()" role="status" aria-live="polite">
-          <span class="punto" aria-hidden="true"></span>
-          Apuestas {{ partido.marcador.apuestas.toLowerCase() }}
+  <main class="contenido">
+    <!-- ============ Columna izquierda ============ -->
+    <aside class="columna-lista">
+      <section class="card">
+        <div class="lista-cabecera">
+          <span class="icono-caja" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          </span>
+          <span class="lista-titulo"><h1>Partidos de hoy</h1><small>Jornada en curso</small></span>
+          <button type="button" class="chip-vivo" [class.activo]="soloEnVivo()" [attr.aria-pressed]="soloEnVivo()" (click)="alternarEnVivo()">
+            En vivo @if (enVivo()) { · {{ enVivo() }} }
+          </button>
+          <span class="chip-num">{{ partidos().length }} partidos</span>
         </div>
-      }
-      <header class="cabecera">
-        <h2>{{ titulo(partido.marcador) }}</h2>
-        <span [class]="'insignia grande ' + claseEstado(partido.marcador.estado)">
-          {{ partido.marcador.estado === 'EN_REVISION' ? 'Revisión VAR en curso' : etiquetaEstado(partido.marcador.estado) }}
-        </span>
-        @if (partido.marcador.estado === 'POR_JUGAR') {
-          <p class="resumen">El partido todavía no empieza</p>
-        } @else {
-          <p class="resumen">{{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} <b>|</b> {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</p>
+
+        <div class="competicion-fila">
+          <span class="estrella" aria-hidden="true">★</span>
+          <b>VAR-Enabled</b>
+          <small>Liga de simulación</small>
+        </div>
+
+        <div class="lista-partidos">
+          @for (partido of partidosVisibles(); track partido.marcador.match_id) {
+            <button type="button" class="fila-partido"
+                    [class.seleccionada]="partido === partidoSeleccionado()"
+                    [attr.aria-current]="partido === partidoSeleccionado() ? 'true' : null"
+                    (click)="seleccionar(partido.marcador.match_id)">
+              <span class="crest sm local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              <span class="nombre">{{ nombreLocal(partido.marcador) }}</span>
+              <span class="centro-fila">
+                @if (partido.marcador.estado === 'POR_JUGAR') { <b class="vs-mini">vs</b> }
+                @else { <b>{{ partido.marcador.local }} - {{ partido.marcador.visitante }}</b> }
+                <small [class]="'estado-mini ' + claseEstado(partido.marcador.estado)">{{ estadoCorto(partido.marcador) }}</small>
+              </span>
+              <span class="nombre derecha">{{ nombreVisitante(partido.marcador) }}</span>
+              <span class="crest sm visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+            </button>
+          } @empty {
+            <p class="lista-vacia">{{ soloEnVivo() ? 'No hay partidos en vivo ahora mismo.' : 'Aún no hay partidos. Créalos desde el EventMaker.' }}</p>
+          }
+        </div>
+      </section>
+
+      <section class="card info-card">
+        <h2><span class="icono-caja sm" aria-hidden="true">i</span> Información de simulación</h2>
+        <p>Los eventos llegan en tiempo real desde el EventMaker. Los goles y faltas pueden revisarse por VAR durante 2 minutos; mientras dura la revisión, las apuestas quedan suspendidas.</p>
+      </section>
+    </aside>
+
+    <!-- ============ Columna derecha ============ -->
+    <section class="columna-detalle">
+      @if (partidoSeleccionado(); as partido) {
+        <article class="card hero">
+          <div class="hero-barra">
+            <button type="button" class="flecha" aria-label="Partido anterior" [disabled]="partidos().length < 2" (click)="moverDestacado(-1)">‹</button>
+            <span class="hero-competicion"><span class="punto-cian" aria-hidden="true"></span> VAR-Enabled <span class="punto-cian" aria-hidden="true"></span></span>
+            <button type="button" class="flecha" aria-label="Partido siguiente" [disabled]="partidos().length < 2" (click)="moverDestacado(1)">›</button>
+          </div>
+
+          <span [class]="'estado-pill ' + claseEstado(partido.marcador.estado)">
+            <span class="punto" aria-hidden="true"></span>
+            @if (partido.marcador.estado === 'EN_JUEGO') { En vivo · {{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} }
+            @else if (partido.marcador.estado === 'EN_REVISION') { Revisión VAR · {{ minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} }
+            @else { {{ estadoCorto(partido.marcador) }} }
+          </span>
+
+          <div class="marcador-grande" [class.en-revision]="partido.marcador.estado === 'EN_REVISION'">
+            <span [class.apagado]="partido.marcador.estado === 'POR_JUGAR' || partido.marcador.local < partido.marcador.visitante">{{ partido.marcador.local }}</span>
+            <span class="guion">-</span>
+            <span [class.apagado]="partido.marcador.estado === 'POR_JUGAR' || partido.marcador.visitante < partido.marcador.local">{{ partido.marcador.visitante }}</span>
+          </div>
+
+          <div class="hero-equipos">
+            <div class="hero-equipo">
+              <span class="crest lg local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              <span class="hero-nombre"><b>{{ nombreLocal(partido.marcador) }}</b><small>Local</small></span>
+            </div>
+            <div class="dominio">
+              <div class="dominio-barra" aria-hidden="true">
+                <span class="local" [style.width.%]="estadisticas()[1].porcentajeLocal"></span>
+                <span class="visitante" [style.width.%]="100 - estadisticas()[1].porcentajeLocal"></span>
+              </div>
+              <div class="dominio-etiquetas">
+                <span>{{ partido.marcador.faltas_local }} faltas</span>
+                <span>{{ partido.marcador.faltas_visitante }} faltas</span>
+              </div>
+            </div>
+            <div class="hero-equipo derecha">
+              <span class="hero-nombre"><b>{{ nombreVisitante(partido.marcador) }}</b><small>Visitante</small></span>
+              <span class="crest lg visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+            </div>
+          </div>
+
+          <div class="hero-pills">
+            <span [class]="'mini-pill ' + claseEstado(partido.marcador.estado)"><span class="punto" aria-hidden="true"></span>{{ etiquetaEstado(partido.marcador.estado) }}</span>
+            <span class="mini-pill">ID Partido <b class="id">{{ partido.marcador.match_id }}</b></span>
+            @if (partido.marcador.apuestas) {
+              <span [class]="'mini-pill apuestas ' + partido.marcador.apuestas.toLowerCase()" role="status" aria-live="polite">
+                <span class="punto" aria-hidden="true"></span>Apuestas {{ partido.marcador.apuestas.toLowerCase() }}
+              </span>
+            }
+          </div>
+
+          <div class="pestanas" role="tablist" aria-label="Detalle del partido">
+            <button type="button" role="tab" [attr.aria-selected]="pestana() === 'campo'" [class.activa]="pestana() === 'campo'" (click)="cambiarPestana('campo')">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="1.5" /><path d="M12 5v14" /><circle cx="12" cy="12" r="2.4" /></svg>Campo en vivo
+            </button>
+            <button type="button" role="tab" [attr.aria-selected]="pestana() === 'eventos'" [class.activa]="pestana() === 'eventos'" (click)="cambiarPestana('eventos')">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M4 6h.01M4 12h.01M4 18h.01" /></svg>Eventos
+            </button>
+            <button type="button" role="tab" [attr.aria-selected]="pestana() === 'estadisticas'" [class.activa]="pestana() === 'estadisticas'" (click)="cambiarPestana('estadisticas')">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-7M22 20H2" /></svg>Estadísticas
+            </button>
+          </div>
+        </article>
+
+        @if (partido.marcador.estado === 'EN_REVISION') {
+          <p class="aviso-revision" role="status">
+            <span class="aviso-var">VAR</span> El VAR está revisando una jugada. Las apuestas de este partido están suspendidas.
+          </p>
         }
 
-        <div class="enfrentamiento">
-          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>{{ nombreLocal(partido.marcador) }}</span></div>
-          <div class="marcador" [class.en-revision]="partido.marcador.estado === 'EN_REVISION'">
-            {{ partido.marcador.local }} - {{ partido.marcador.visitante }}
+        <!-- Panel de la pestaña elegida. La cancha queda montada para no perder su animacion. -->
+        <article class="card panel-accion">
+          <div [hidden]="pestana() !== 'campo'">
+            <div class="campo-cabecera">
+              <span><i class="dot local"></i><b>{{ nombreLocal(partido.marcador) }}</b> <small>(4-4-2)</small></span>
+              <span><small>(4-4-2)</small> <b>{{ nombreVisitante(partido.marcador) }}</b><i class="dot visitante"></i></span>
+            </div>
+            <div class="campo">
+              <app-simulacion-cancha [marcador]="partido.marcador" [eventos]="partido.eventos" />
+            </div>
+            <div class="campo-pie">
+              <span><i [class]="'dot estado ' + claseEstado(partido.marcador.estado)"></i>{{ etiquetaEstado(partido.marcador.estado) }}</span>
+              <span class="mini-pill">{{ partido.marcador.estado === 'POR_JUGAR' ? "--'" : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }} · {{ partido.marcador.local }} - {{ partido.marcador.visitante }}</span>
+            </div>
           </div>
-          <div class="equipo"><ng-container [ngTemplateOutlet]="escudo" /><span>{{ nombreVisitante(partido.marcador) }}</span></div>
-        </div>
 
-        <div class="estadistica">
-          <span>{{ partido.marcador.faltas_local }}</span>
-          <b>Faltas</b>
-          <span>{{ partido.marcador.faltas_visitante }}</span>
-        </div>
-      </header>
+          @if (pestana() === 'eventos') {
+            <div class="panel-pestana" role="tabpanel">
+              <div class="campo-cabecera sin-borde">
+                <span><i class="dot local"></i><b>{{ nombreLocal(partido.marcador) }}</b></span>
+                <span><b>{{ nombreVisitante(partido.marcador) }}</b><i class="dot visitante"></i></span>
+              </div>
+              <div class="linea">
+                @for (fila of lineaDeTiempo(); track $index) {
+                  @if (fila.lado) {
+                    <div class="ev" [class.anulado]="fila.anulado">
+                      <div class="ev-lado local">
+                        @if (fila.lado === 'home') { <ng-container [ngTemplateOutlet]="detalleEvento" [ngTemplateOutletContext]="{ $implicit: fila }" /> }
+                      </div>
+                      <span class="ev-minuto">{{ fila.minuto }}</span>
+                      <div class="ev-lado visitante">
+                        @if (fila.lado === 'away') { <ng-container [ngTemplateOutlet]="detalleEvento" [ngTemplateOutletContext]="{ $implicit: fila }" /> }
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="ev neutro" [class.anulado]="fila.anulado">
+                      <span class="ev-chip">
+                        <span [class]="'fila-icono ' + fila.clase">{{ fila.icono }}</span>
+                        <span class="fila-texto"><strong>{{ fila.titulo }} · {{ fila.minuto }}</strong><span>{{ fila.descripcion }}</span></span>
+                      </span>
+                    </div>
+                  }
+                } @empty {
+                  <p class="panel-vacio">Aún no hay jugadas registradas.</p>
+                }
+              </div>
+            </div>
+          }
 
-      @if (partido.marcador.estado === 'EN_REVISION') {
-        <p class="aviso-revision" role="status">El VAR está revisando una jugada. Las apuestas de este partido están suspendidas.</p>
+          @if (pestana() === 'estadisticas') {
+            <div class="panel-pestana" role="tabpanel">
+              <div class="campo-cabecera sin-borde">
+                <span><i class="dot local"></i><b>{{ nombreLocal(partido.marcador) }}</b></span>
+                <span><b>{{ nombreVisitante(partido.marcador) }}</b><i class="dot visitante"></i></span>
+              </div>
+              @for (stat of estadisticas(); track stat.nombre) {
+                <div class="stat">
+                  <div class="stat-valores">
+                    <b [class.lider]="stat.local > stat.visitante">{{ stat.local }}</b>
+                    <span>{{ stat.nombre }}</span>
+                    <b [class.lider]="stat.visitante > stat.local">{{ stat.visitante }}</b>
+                  </div>
+                  <div class="stat-barra" aria-hidden="true">
+                    <span class="local" [style.width.%]="stat.porcentajeLocal"></span>
+                    <span class="visitante" [style.width.%]="100 - stat.porcentajeLocal"></span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </article>
+
+        <!-- Tarjetas inferiores -->
+        <div class="rejilla">
+          <article class="card">
+            <div class="card-cabecera">
+              <h3><span class="punto-cian" aria-hidden="true"></span>Jugadas destacadas</h3>
+              <div class="filtro-jugadas" role="group" aria-label="Filtrar jugadas">
+                <button type="button" [class.activo]="filtroJugadas() === 'todas'" (click)="filtrarJugadas('todas')">Todas</button>
+                <button type="button" [class.activo]="filtroJugadas() === 'goles'" (click)="filtrarJugadas('goles')">⚽ Goles</button>
+                <button type="button" [class.activo]="filtroJugadas() === 'tarjetas'" (click)="filtrarJugadas('tarjetas')"><i class="mini-tarjeta"></i>Tarjetas</button>
+                <button type="button" class="var" [class.activo]="filtroJugadas() === 'var'" (click)="filtrarJugadas('var')">VAR</button>
+              </div>
+            </div>
+            <div class="jugadas">
+              @for (fila of jugadasDestacadas(); track $index) {
+                <div [class]="'jugada ' + fila.clase" [class.anulado]="fila.anulado">
+                  <span [class]="'fila-icono ' + fila.clase">{{ fila.icono }}</span>
+                  <span class="fila-texto"><strong>{{ fila.titulo }}</strong><span>{{ fila.descripcion }}</span></span>
+                  <span class="jugada-minuto"><b>{{ fila.minuto }}</b><small>Min</small></span>
+                </div>
+              } @empty {
+                <p class="panel-vacio">Sin jugadas de este tipo todavía.</p>
+              }
+            </div>
+            <button type="button" class="ver-todo" (click)="cambiarPestana('eventos')">Ver todos los eventos ›</button>
+          </article>
+
+          <article class="card">
+            <div class="card-cabecera"><h3><span class="punto-rojo" aria-hidden="true"></span>Mercado de apuestas</h3></div>
+            <div class="apuestas-card">
+              <div [class]="'apuestas-caja ' + (partido.marcador.apuestas?.toLowerCase() ?? 'sin-dato')">
+                <span class="apuestas-pill"><span class="punto" aria-hidden="true"></span>{{ partido.marcador.apuestas ? 'Apuestas ' + partido.marcador.apuestas.toLowerCase() : 'Sin datos' }}</span>
+                <p>{{ textoApuestas(partido.marcador) }}</p>
+              </div>
+              <dl>
+                <div><dt>Estado del partido</dt><dd><i [class]="'dot estado ' + claseEstado(partido.marcador.estado)"></i>{{ etiquetaEstado(partido.marcador.estado) }}</dd></div>
+                <div><dt>Minuto</dt><dd class="cian">{{ partido.marcador.estado === 'POR_JUGAR' ? '--' : minutoTexto(partido.marcador.minuto, partido.marcador.minuto_extra) }}</dd></div>
+                <div><dt>Revisión VAR</dt><dd>{{ partido.marcador.estado === 'EN_REVISION' ? 'En curso' : 'No' }}</dd></div>
+                <div><dt>Faltas</dt><dd><span class="mini-pill">{{ partido.marcador.faltas_local }} - {{ partido.marcador.faltas_visitante }}</span></dd></div>
+              </dl>
+              <p class="nota">El marcador, el minuto y los eventos son reales; el movimiento de los jugadores en el campo es ilustrativo.</p>
+            </div>
+          </article>
+        </div>
+      } @else {
+        <div class="card vacio" aria-live="polite">
+          <svg class="vacio-cancha" viewBox="0 0 120 70" aria-hidden="true">
+            <rect x="2" y="2" width="116" height="66" rx="4" />
+            <line x1="60" y1="2" x2="60" y2="68" />
+            <circle cx="60" cy="35" r="11" />
+            <rect x="2" y="20" width="16" height="30" />
+            <rect x="102" y="20" width="16" height="30" />
+          </svg>
+          <h2>Esperando partidos</h2>
+          <p>Cuando se cree un partido desde el EventMaker, aparecerá aquí automáticamente.</p>
+          @if (!conectado()) { <button type="button" class="reintentar" (click)="reconectar()">Reintentar conexión</button> }
+        </div>
       }
+    </section>
+  </main>
 
-      <article class="panel">
-        <h3>Partido</h3>
-        @for (fila of lineaDeTiempo(); track $index) {
-          <div class="fila" [class.anulado]="fila.anulado">
-            <span class="fila-minuto">{{ fila.minuto }}</span>
-            <span [class]="'fila-icono ' + fila.clase">{{ fila.icono }}</span>
-            <span class="fila-texto">
-              <strong>{{ fila.titulo }}</strong>
-              <span>{{ fila.descripcion }}</span>
-            </span>
-          </div>
-        } @empty {
-          <p class="panel-vacio">Todavía no hay eventos en este partido.</p>
-        }
-      </article>
-    } @else {
-      <div class="vacio" aria-live="polite">
-        <h2>Esperando partidos</h2>
-        <p>Cuando se cree un partido, aparecerá aquí automáticamente.</p>
-        @if (!conectado()) { <button type="button" class="reintentar" (click)="reconectar()">Reintentar conexión</button> }
-      </div>
-    }
-  </section>
-</main>
+  <footer class="pie-pagina">
+    <b>Simulador de partidos con tecnología VAR</b>
+    <span>El marcador, el minuto y los eventos son reales; el movimiento de los jugadores es ilustrativo.</span>
+  </footer>
+</div>
