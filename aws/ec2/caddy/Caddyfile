@@ -1,13 +1,27 @@
 # Puerta de entrada de VAR-Enabled en la EC2.
 # Caddy corre en su propio contenedor, fuera del docker-compose del proyecto, con
-# --network host. Saca y renueva solo el certificado HTTPS (Let's Encrypt).
+# --network host. Saca y renueva solo los certificados HTTPS (Let's Encrypt).
 #
-# Recibe estas variables desde /etc/var-enabled/caddy.env (las escribe aws/ec2/arranque.sh):
-#   SITIOS          con dominio: "<sub>.duckdns.org, http://<ip-fija>"    sin dominio: ":80"
-#   SITIO_RABBITMQ  con dominio: "rabbit.<sub>.duckdns.org"               sin dominio: "http://rabbit.localhost"
+# Las variables se crean a mano en la EC2, en /etc/var-enabled/caddy.env
+# (ver docs/DESPLIEGUE_AWS.md):
+#   SITIOS          dominio de la app, por ejemplo "var-enabled-ucc.duckdns.org"
+#   SITIO_RABBITMQ  dominio del panel, por ejemplo "rabbit.var-enabled-ucc.duckdns.org"
 #   HASH_OPERADOR   hash bcrypt de la clave del usuario "operador"
 
+# Cabeceras de seguridad que se usan en los dos sitios
+(seguridad) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
 {$SITIOS} {
+	import seguridad
+
 	# EventMaker y la API de eventos cambian los partidos: piden usuario y clave.
 	# El marcador y su WebSocket son publicos porque solo se leen.
 	@operador path /eventmaker /eventmaker/* /api/*
@@ -43,7 +57,12 @@
 	}
 }
 
-# Panel de RabbitMQ: se entra con el usuario y la clave de RabbitMQ
+# Panel de RabbitMQ: solo por HTTPS y con dos claves
+# (primero la del operador y despues el login propio de RabbitMQ)
 {$SITIO_RABBITMQ} {
+	import seguridad
+	basic_auth {
+		operador {$HASH_OPERADOR}
+	}
 	reverse_proxy 127.0.0.1:15672
 }
