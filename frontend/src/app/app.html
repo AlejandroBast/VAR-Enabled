@@ -54,7 +54,11 @@
                     [class.seleccionada]="partido === partidoSeleccionado()"
                     [attr.aria-current]="partido === partidoSeleccionado() ? 'true' : null"
                     (click)="seleccionar(partido.marcador.match_id)">
-              <span class="crest sm local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
+                <img class="escudo-equipo sm" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
+              } @else {
+                <span class="crest sm local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              }
               <span class="nombre">{{ nombreLocal(partido.marcador) }}</span>
               <span class="centro-fila">
                 @if (partido.marcador.estado === 'POR_JUGAR') { <b class="vs-mini">vs</b> }
@@ -62,7 +66,11 @@
                 <small [class]="'estado-mini ' + claseEstado(partido.marcador.estado)">{{ estadoCorto(partido.marcador) }}</small>
               </span>
               <span class="nombre derecha">{{ nombreVisitante(partido.marcador) }}</span>
-              <span class="crest sm visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
+                <img class="escudo-equipo sm" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
+              } @else {
+                <span class="crest sm visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              }
             </button>
           } @empty {
             <p class="lista-vacia">{{ soloEnVivo() ? 'No hay partidos en vivo ahora mismo.' : 'Aún no hay partidos. Créalos desde el EventMaker.' }}</p>
@@ -101,7 +109,11 @@
 
           <div class="hero-equipos">
             <div class="hero-equipo">
-              <span class="crest lg local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreLocal(partido.marcador)); as logoLocal) {
+                <img class="escudo-equipo lg" [src]="logoLocal" [alt]="nombreLocal(partido.marcador)" />
+              } @else {
+                <span class="crest lg local">{{ abreviatura(nombreLocal(partido.marcador)) }}</span>
+              }
               <span class="hero-nombre"><b>{{ nombreLocal(partido.marcador) }}</b><small>Local</small></span>
             </div>
             <div class="dominio">
@@ -116,7 +128,11 @@
             </div>
             <div class="hero-equipo derecha">
               <span class="hero-nombre"><b>{{ nombreVisitante(partido.marcador) }}</b><small>Visitante</small></span>
-              <span class="crest lg visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              @if (obtenerLogo(nombreVisitante(partido.marcador)); as logoVisitante) {
+                <img class="escudo-equipo lg" [src]="logoVisitante" [alt]="nombreVisitante(partido.marcador)" />
+              } @else {
+                <span class="crest lg visitante">{{ abreviatura(nombreVisitante(partido.marcador)) }}</span>
+              }
             </div>
           </div>
 
