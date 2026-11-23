@@ -1,64 +1,134 @@
-# VAR-Enabled
+# VAR-Enabled ⚽
 
-**VAR-Enabled** es una plataforma de **gestión de marcadores** deportivos en tiempo real para partidos de fútbol. Recibe los eventos de varios partidos a la vez (goles, faltas, revisiones del VAR), calcula el marcador oficial de cada uno y lo distribuye al instante a dashboards web, servicios de notificación, sistemas de apuestas y módulos de auditoría.
+**Sistema de gestión de partidos de fútbol y marcadores en tiempo real con tecnología VAR.**
 
-Su característica principal es la gestión de reversiones por VAR. Cuando el VAR anula un gol que ya se había registrado y notificado, la plataforma:
+VAR-Enabled es un proyecto para seguir partidos de fútbol en tiempo real. Desde EventMaker se crean los encuentros y se registran las jugadas; en el dashboard se pueden ver el marcador, los eventos y las estadísticas. El sistema también permite revisar goles y faltas mediante VAR.
 
-- **Corrige el marcador:** reconcilia el estado y vuelve, por ejemplo, de 1-0 a 0-0.
-- **Avisa la corrección** a todos los sistemas que reciben el marcador.
-- **Reanuda las apuestas** que se habían suspendido.
-- **Deja trazabilidad** de la decisión en la base de datos de auditoría.
+## Integrantes
 
-Para lograrlo, **VAR-Enabled** usa una arquitectura de microservicios orientada a eventos:
+- **Michael David Lagos Rosero**
+- **Ronald Felipe Benavides Bastidas**
+- **Nicolás Bastidas Calvache**
+- **Julio Bolaños Benavides**
 
-- **Apache Kafka** es el registro inmutable del partido, la única fuente de verdad.
-- **RabbitMQ** reparte las actualizaciones, las alertas y los comandos.
-- **PostgreSQL** guarda el historial para auditoría.
+## ¿Qué hace el sistema?
 
-Todo está construido en Java 17 con Spring Boot y orquestado con Docker Compose.
+- Creación e inicio de partidos desde **EventMaker**.
+- Registro de goles, faltas y tarjetas.
+- Marcador y cronómetro actualizados en el dashboard.
+- Revisión VAR de goles y faltas, con la posibilidad de confirmar o anular jugadas.
+- Visualización de eventos, estadísticas y campo de juego ilustrativo.
+- Visualización del estado de las apuestas.
+- Registro del historial de eventos y resultados.
+- Escudos SVG de los equipos registrados en el catálogo Premier League.
 
-## Requisitos de Funcionalidades
-### Funcionales
- - **RF1** - Generar eventos al azar de varios partidos: gol, falta, revisión VAR, gol anulado y “sigue el juego”
-- **RF2** - Registrar cada evento en Kafka, en orden, por partido
-- **RF3** - Calcular el marcador correcto de cada partido
-- **RF4** - Anular un gol específico cuando llegue “gol anulado” con su ID
-- **RF5** - Rechazar la anulación de un gol que no existe
-- **RF6** - Mostrar el marcador en vivo en una página web
-- **RF7** - Enviar alertas de “¡GOL!” y “¡GOL ANULADO POR EL VAR!”
-- **RF8** - Pausar las apuestas cuando hay gol o revisión del VAR
-- **RF9** - Reanudar las apuestas cuando se anula el gol o sigue el juego
-- **RF10** - Guardar todos los eventos y anulaciones en PostgreSQL
+## Tecnologías
 
-### No funcionales
-- **RNF1** - Tiempo real: el marcador se actualiza en segundos
-- **RNF2** - Orden: los eventos de un mismo partido nunca se desordenan (se usa match_id como clave en Kafka)
-- **RNF3** - No perder eventos: Kafka guarda el historial de forma permanente
-- **RNF4** - Desacople: cada servicio funciona por separado y se comunica solo por Kafka o RabbitMQ
-- **RNF5** - Escalable: el worker de apuestas corre en varias copias que se reparten el trabajo
-- **RNF6** - Recursos limitados: cada contenedor tiene un límite de CPU y RAM
-- **RNF7** - Seguridad: los contenedores corren sin usuario administrador
-- **RNF8** - Calidad: la lógica tiene pruebas con JUnit y Mockito
-- **RNF9** - Fácil de levantar: todo arranca con un solo docker compose up
+| Tecnología | Uso |
+|---|---|
+| Java 17 y Spring Boot | Lógica de negocio y microservicios |
+| Angular y TypeScript | Dashboard de partidos |
+| HTML, CSS y SVG | Interfaz de EventMaker y escudos |
+| Apache Kafka | Publicación y consumo de eventos |
+| RabbitMQ | Mensajería entre servicios |
+| PostgreSQL | Almacenamiento de historial y catálogo |
+| Docker Compose | Ejecución de servicios |
+| Git y GitHub | Control de versiones |
 
-### Reglas de negocio
-- **RN1.** El marcador nunca puede ser negativo.
-- **RN2.** Solo se puede anular un gol que ya se registró.
-- **RN3.** Un gol no se puede anular dos veces.
-- **RN4.** Cada evento tiene un ID único.
+## Arquitectura del sistema
 
-### Tecnologias
-#### Componente / Rol en la plataforma
-- **Apache Kafka	Sistema de registro (log inmutable)** la única fuente de verdad del historial de cada partido
-- **RabbitMQ** Sistema de acciones: reparte las actualizaciones, alertas y comandos
-- **PostgreSQL** Persistencia relacional para auditoría e historial
-- **Spring Boot (Java 17)**	Implementación de los microservicios con POO y SOLID
-- **Docker Compose** Orquestación de la plataforma con límites de recursos
+Cuando se registra una jugada en **EventMaker**, el evento pasa al backend y se publica en Kafka. Otros servicios lo procesan, actualizan el partido y envían la información al dashboard por medio de RabbitMQ y WebSocket. PostgreSQL guarda el historial de eventos y resultados.
 
-## Diagrama de Clases
-![diagrama clases](/docs/image.png)
+| Servicio | Función |
+|---|---|
+| `live_feed_producer` | Crea partidos y publica eventos |
+| `match_state_service` | Actualiza el estado y el marcador |
+| `dashboard_backend` | Comunica el marcador al frontend |
+| `notification_backend` | Gestiona notificaciones |
+| `betting_suspension_service` | Controla la suspensión de apuestas |
+| `betting_worker` | Procesa operaciones de apuestas |
+| `historical_archiver` | Almacena historial y resultados |
 
-## Diagrama de Flujo
-![diagrama de flujo](/docs/image-2.png)
+## Reglas de negocio
 
-# 
+1. El marcador no puede tener goles negativos.
+2. Solo se puede anular una jugada previamente registrada y habilitada para revisión.
+3. Una misma jugada no se puede anular dos veces.
+4. Cada evento debe tener un identificador único.
+5. Solo puede haber una revisión VAR abierta a la vez para un partido.
+6. Los goles y las faltas se pueden revisar dentro de los dos minutos siguientes a la jugada.
+7. Durante la revisión VAR, las apuestas quedan detenidas y su estado se actualiza según la decisión y el marcador.
+
+## Premier League y base de datos
+
+Para los partidos de la Premier League agregamos **20 equipos**, sus escudos SVG y el logo de la competición.
+
+- `database/premier_league.sql`: crea las tablas `ligas` y `equipos` y registra el catálogo.
+- `frontend/public/assets/equipos/`: contiene los 20 escudos SVG.
+- `frontend/public/assets/ligas/premier-league.svg`: contiene el logo de la liga.
+
+Cada equipo pertenece a una liga mediante `liga_id`. En el dashboard, los escudos aparecen según el nombre del equipo que participa. Tanto el catálogo SQL como las imágenes están incluidos en el repositorio.
+
+## Diagramas del sistema
+
+### 1. Diagrama de clases
+
+Muestra las clases que manejan los partidos, los eventos y las revisiones VAR.
+
+![Diagrama de clases](docs/diagramas/01_clases.png)
+
+### 2. Diagrama de componentes
+
+Muestra el frontend, los microservicios y la comunicación con Kafka, RabbitMQ y PostgreSQL.
+
+![Diagrama de componentes](docs/diagramas/02_componentes.png)
+
+### 3. Diagrama de secuencia
+
+Sigue el recorrido de un evento desde que se registra hasta que aparece en el marcador.
+
+![Diagrama de secuencia](docs/diagramas/03_secuencia.png)
+
+### 4. Diagrama de paquetes
+
+Muestra cómo está organizado el código del proyecto.
+
+![Diagrama de paquetes](docs/diagramas/04_paquetes.png)
+
+### 5. Diagrama de contexto
+
+Explica quiénes usan el sistema y con qué servicios se comunica.
+
+![Diagrama de contexto](docs/diagramas/05_contexto.png)
+
+### 6. Diagrama entidad-relación (ER)
+
+Muestra las tablas de ligas y equipos, además de una vista general de cómo se relacionan los datos de partidos, eventos y resultados. Algunas relaciones son ilustrativas y no están creadas como claves foráneas en el SQL.
+
+![Diagrama entidad-relación](docs/diagramas/06_er.png)
+
+## Evidencias del funcionamiento
+
+### 1. Marcador y campo de juego
+
+Partido de prueba **Arsenal vs. Aston Villa**. Se observan los escudos SVG, el marcador 0-0, el minuto de juego y la cancha ilustrativa.
+
+![Marcador y campo de juego](docs/evidencias/01_marcador_campo.png)
+
+### 2. Eventos y apuestas
+
+Se visualizan el inicio del partido, la sección de eventos y el estado de apuestas abiertas.
+
+![Eventos y apuestas](docs/evidencias/02_eventos_apuestas.png)
+
+### 3. Estadísticas del partido
+
+El dashboard muestra goles, faltas y tarjetas amarillas y rojas de ambos equipos.
+
+![Estadísticas del encuentro](docs/evidencias/03_estadisticas.png)
+
+Las capturas son evidencias de la interfaz durante una simulación del partido.
+
+---
+
+**VAR-Enabled — Gestión de partidos y marcadores en tiempo real.**
