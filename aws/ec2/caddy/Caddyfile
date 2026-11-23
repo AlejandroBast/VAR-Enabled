@@ -57,12 +57,10 @@
 	}
 }
 
-# Panel de RabbitMQ: solo por HTTPS y con dos claves
-# (primero la del operador y despues el login propio de RabbitMQ)
+# Panel de RabbitMQ: solo por HTTPS y con el login propio de RabbitMQ
+# (usuario y clave del .env). No lleva basic_auth porque el panel usa la misma
+# cabecera Authorization para su login y las dos claves chocan.
 {$SITIO_RABBITMQ} {
 	import seguridad
-	basic_auth {
-		operador {$HASH_OPERADOR}
-	}
 	reverse_proxy 127.0.0.1:15672
 }
