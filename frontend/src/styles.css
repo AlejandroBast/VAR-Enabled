@@ -60,6 +60,10 @@ button { font: inherit; }
 .crest.visitante { background: linear-gradient(145deg, #ffa05c, #e65a12); box-shadow: 0 0 16px #ff7a2f66; }
 .crest.sm { border-radius: 50%; font-size: 9px; height: 30px; width: 30px; }
 .crest.lg { border-radius: 14px; font-size: 16px; height: 58px; width: 58px; }
+/* Escudos oficiales de los clubes; las siglas se mantienen como respaldo para equipos sin logo. */
+.escudo-equipo { display: block; flex: none; object-fit: contain; }
+.escudo-equipo.sm { height: 30px; width: 30px; }
+.escudo-equipo.lg { height: 58px; width: 58px; }
 .dot { border-radius: 50%; display: inline-block; flex: none; height: 9px; width: 9px; }
 .dot.local { background: var(--local); box-shadow: 0 0 8px var(--local); }
 .dot.visitante { background: var(--visitante); box-shadow: 0 0 8px var(--visitante); }

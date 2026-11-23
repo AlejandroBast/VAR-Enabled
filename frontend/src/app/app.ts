@@ -204,6 +204,35 @@ export class App implements OnInit, OnDestroy {
     return nombre.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
   }
 
+  protected readonly logosEquipos: Record<string, string> = {
+    'arsenal': 'arsenal.svg',
+    'aston villa': 'aston-villa.svg',
+    'bournemouth': 'bournemouth.svg',
+    'brentford': 'brentford.svg',
+    'brighton': 'brighton.svg',
+    'chelsea': 'chelsea.svg',
+    'coventry city': 'coventry-city.svg',
+    'crystal palace': 'crystal-palace.svg',
+    'everton': 'everton.svg',
+    'fulham': 'fulham.svg',
+    'hull city': 'hull-city.svg',
+    'ipswich town': 'ipswich-town.svg',
+    'leeds united': 'leeds-united.svg',
+    'liverpool': 'liverpool.svg',
+    'manchester city': 'manchester-city.svg',
+    'manchester united': 'manchester-united.svg',
+    'newcastle united': 'newcastle-united.svg',
+    'nottingham forest': 'nottingham-forest.svg',
+    'sunderland': 'sunderland.svg',
+    'tottenham hotspur': 'tottenham.svg',
+  };
+
+  protected obtenerLogo(nombre: string): string | null {
+    const clave = nombre.trim().toLowerCase();
+    const archivo = this.logosEquipos[clave];
+    return archivo ? `/assets/equipos/${archivo}` : null;
+  }
+
   protected etiquetaEstado(estado: EstadoPartido): string {
     return ETIQUETA_ESTADO[estado] ?? estado;
   }
