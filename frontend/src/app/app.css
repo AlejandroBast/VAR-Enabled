@@ -120,6 +120,7 @@
   .hero-equipos { grid-template-columns: 1fr 1fr; padding: 4px 12px; }
   .dominio { grid-column: 1 / -1; grid-row: 2; }
   .crest.lg { font-size: 12px; height: 44px; width: 44px; }
+  .escudo-equipo.lg { height: 44px; width: 44px; }
   .pestanas button { padding: 8px 9px; }
   .fila-texto span { display: none; }
   .ev { grid-template-columns: 1fr 46px 1fr; }
