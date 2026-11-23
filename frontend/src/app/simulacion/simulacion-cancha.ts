@@ -478,10 +478,10 @@ export class SimulacionCancha implements AfterViewInit, OnDestroy {
     const pasto = ctx.createLinearGradient(0, 0, 0, H);
     pasto.addColorStop(0, '#12372a'); pasto.addColorStop(.25, '#174b30'); pasto.addColorStop(1, '#0a2218');
     ctx.fillStyle = pasto; ctx.fillRect(-10, -10, W + 20, H + 20);
-    ctx.fillStyle = '#182521'; ctx.fillRect(-10, -10, W + 20, 85); ctx.fillRect(-10, 490, W + 20, 90);
+    ctx.fillStyle = '#0a1122'; ctx.fillRect(-10, -10, W + 20, 85); ctx.fillRect(-10, 490, W + 20, 90);
     ctx.fillStyle = '#0c2e20'; ctx.fillRect(-10, 75, L + 10, 415); ctx.fillRect(R, 75, W - R + 10, 415);
     for (let i = 0; i < 12; i++) {
-      ctx.fillStyle = i % 2 ? '#2c8547' : '#287840';
+      ctx.fillStyle = i % 2 ? '#1d6a3b' : '#195e34';
       ctx.fillRect(L + i * (R - L) / 12, T, (R - L) / 12, B - T);
     }
     ctx.strokeStyle = 'rgba(241,255,243,.82)'; ctx.lineWidth = 2.6;
@@ -596,7 +596,7 @@ export class SimulacionCancha implements AfterViewInit, OnDestroy {
 
   private dibujarHud(ctx: CanvasRenderingContext2D, m: Marcador, t: number): void {
     const gol = this.efectos.find((e) => e.tipo === 'gol');
-    ctx.fillStyle = 'rgba(3,18,11,.77)'; ctx.fillRect(20, 513, 560, 40);
+    ctx.fillStyle = 'rgba(6,12,26,.9)'; ctx.fillRect(20, 513, 560, 40);
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.fillStyle = gol ? VERDE : '#e9fff0';
     ctx.font = 'bold 17px system-ui, sans-serif';
@@ -654,17 +654,30 @@ export class SimulacionCancha implements AfterViewInit, OnDestroy {
     }
 
     if (this.efectos.some((e) => e.tipo !== 'falta')) return; // el efecto activo manda
-    const pulso = m.estado === 'EN_REVISION' && !this.reducido ? .75 + Math.sin(t * .005) * .25 : 1;
-    ctx.globalAlpha = pulso;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '800 30px system-ui, sans-serif'; ctx.fillStyle = info.color;
-    ctx.fillText(info.titulo, CX, CY - 14);
-    ctx.globalAlpha = 1;
-    ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = '#cbd5e1';
     const sub = m.estado === 'POR_JUGAR' ? 'La simulación arranca al pulsar «Iniciar partido» en el EventMaker'
       : m.estado === 'ENTRETIEMPO' ? 'Se reanuda con «Iniciar segundo tiempo»'
       : m.estado === 'EN_REVISION' ? 'Apuestas suspendidas hasta la decisión del VAR'
       : `Resultado final ${m.local} - ${m.visitante}`;
+
+    // Caja con borde neon, como el resto del panel.
+    ctx.font = '15px system-ui, sans-serif';
+    const ancho = Math.max(340, ctx.measureText(sub).width + 60);
+    const borde = m.estado === 'EN_REVISION' ? AMBAR : '#22d3ee';
+    ctx.save();
+    ctx.fillStyle = 'rgba(6,12,26,.92)'; ctx.strokeStyle = borde; ctx.lineWidth = 1.5;
+    ctx.shadowColor = borde; ctx.shadowBlur = 18;
+    ctx.beginPath(); ctx.roundRect(CX - ancho / 2, CY - 50, ancho, 100, 14); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = borde;
+    for (const dx of [-1, 1]) { ctx.beginPath(); ctx.arc(CX + dx * (ancho / 2 - 18), CY - 14, 3, 0, Math.PI * 2); ctx.fill(); }
+
+    const pulso = m.estado === 'EN_REVISION' && !this.reducido ? .75 + Math.sin(t * .005) * .25 : 1;
+    ctx.globalAlpha = pulso;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 28px system-ui, sans-serif'; ctx.fillStyle = info.color;
+    ctx.fillText(info.titulo.toUpperCase(), CX, CY - 14, ancho - 60);
+    ctx.globalAlpha = 1;
+    ctx.font = '15px system-ui, sans-serif'; ctx.fillStyle = '#9fb3d1';
     ctx.fillText(sub, CX, CY + 22);
   }
 
