@@ -49,6 +49,28 @@
   input, select { width: 100%; }
   .fila { display: flex; gap: 12px; flex-wrap: wrap; }
   .fila > div { flex: 1; min-width: 160px; }
+  .selector-equipo { position: relative; }
+  .selector-equipo > button {
+    align-items: center; background: #0f1626; border: 1px solid var(--borde); color: var(--texto);
+    display: flex; font-weight: 400; gap: 9px; justify-content: flex-start; margin: 0;
+    min-height: 40px; padding: 7px 11px; text-align: left; width: 100%;
+  }
+  .selector-equipo > button::after { color: var(--texto-sutil); content: '⌄'; font-size: 1.1rem; margin-left: auto; }
+  .selector-equipo > button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  .escudo-equipo { height: 28px; object-fit: contain; width: 28px; }
+  .escudo-equipo.mini { height: 22px; width: 22px; }
+  .selector-placeholder { color: var(--texto-sutil); }
+  .opciones-equipo {
+    background: #111c31; border: 1px solid #3b4c6c; border-radius: 10px; box-shadow: 0 14px 30px #020617aa;
+    display: grid; gap: 2px; left: 0; max-height: 260px; overflow-y: auto; padding: 5px;
+    position: absolute; right: 0; top: calc(100% + 5px); z-index: 10;
+  }
+  .opcion-equipo {
+    align-items: center; background: transparent; color: var(--texto); display: flex; font-weight: 400;
+    gap: 9px; justify-content: flex-start; margin: 0; padding: 7px 8px; text-align: left; width: 100%;
+  }
+  .opcion-equipo:hover, .opcion-equipo:focus-visible { background: #21314f; }
+  .opcion-equipo:disabled { color: var(--texto-sutil); opacity: .5; }
   button {
     background: var(--acento);
     border: 0;
@@ -62,8 +84,11 @@
   button:disabled { cursor: not-allowed; opacity: .45; }
   .lista-partidos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .chip {
+    align-items: center;
     border: 1px solid var(--borde);
     border-radius: 999px;
+    display: inline-flex;
+    gap: 6px;
     padding: 6px 12px;
     font-size: .85rem;
     cursor: pointer;
@@ -103,6 +128,10 @@
   #log .ok { color: var(--acento); }
   #log .err { color: var(--error); }
   .oculto { display: none !important; }
+  .enfrentamiento-resumen { align-items: center; display: inline-flex; gap: 5px; }
+  .enfrentamiento-resumen .vs { color: var(--texto-sutil); font-size: .75rem; }
+  .reloj .estado .enfrentamiento-resumen { font-size: .95rem; margin-bottom: 2px; }
+  @media (max-width: 560px) { .opciones-equipo { max-height: 210px; } }
 </style>
 </head>
 <body>
@@ -124,11 +153,23 @@
       </div>
       <div>
         <label for="equipoLocal">Equipo local</label>
-        <input id="equipoLocal" placeholder="ej. Nacional">
+        <input id="equipoLocal" type="hidden">
+        <div class="selector-equipo" data-input="equipoLocal">
+          <button id="selectorEquipoLocal" type="button" aria-expanded="false" aria-haspopup="listbox">
+            <span class="selector-placeholder">Selecciona un equipo</span>
+          </button>
+          <div id="opcionesEquipoLocal" class="opciones-equipo oculto" role="listbox" aria-label="Equipo local"></div>
+        </div>
       </div>
       <div>
         <label for="equipoVisitante">Equipo visitante</label>
-        <input id="equipoVisitante" placeholder="ej. América">
+        <input id="equipoVisitante" type="hidden">
+        <div class="selector-equipo" data-input="equipoVisitante">
+          <button id="selectorEquipoVisitante" type="button" aria-expanded="false" aria-haspopup="listbox">
+            <span class="selector-placeholder">Selecciona un equipo</span>
+          </button>
+          <div id="opcionesEquipoVisitante" class="opciones-equipo oculto" role="listbox" aria-label="Equipo visitante"></div>
+        </div>
       </div>
     </div>
     <button id="btnCrearPartido">Crear partido</button>
@@ -188,6 +229,125 @@ let partidoSeleccionado = null;
 let partidosConocidos = [];
 let eventosDelPartido = [];
 let estadoAnterior = null;
+
+// Datos de presentación del catálogo Premier League. El EventMaker no consulta ni modifica datos de equipos.
+const EQUIPOS_PREMIER = [
+  ['Arsenal', 'arsenal'], ['Aston Villa', 'aston-villa'], ['Bournemouth', 'bournemouth'],
+  ['Brentford', 'brentford'], ['Brighton', 'brighton'], ['Chelsea', 'chelsea'],
+  ['Coventry City', 'coventry-city'], ['Crystal Palace', 'crystal-palace'], ['Everton', 'everton'],
+  ['Fulham', 'fulham'], ['Hull City', 'hull-city'], ['Ipswich Town', 'ipswich-town'],
+  ['Leeds United', 'leeds-united'], ['Liverpool', 'liverpool'], ['Manchester City', 'manchester-city'],
+  ['Manchester United', 'manchester-united'], ['Newcastle United', 'newcastle-united'],
+  ['Nottingham Forest', 'nottingham-forest'], ['Sunderland', 'sunderland'], ['Tottenham Hotspur', 'tottenham'],
+];
+const EQUIPO_POR_NOMBRE = Object.fromEntries(EQUIPOS_PREMIER);
+
+function rutaEscudo(nombre) {
+  const slug = EQUIPO_POR_NOMBRE[nombre];
+  if (!slug) return null;
+  // Permite abrir este HTML directamente y también servirlo junto al frontend compilado.
+  return location.protocol === 'file:'
+    ? `../frontend/public/assets/equipos/${slug}.svg`
+    : `/assets/equipos/${slug}.svg`;
+}
+
+function nodoEquipo(nombre, clase = '') {
+  const grupo = document.createElement('span');
+  grupo.className = clase;
+  const escudo = rutaEscudo(nombre);
+  if (escudo) {
+    const imagen = document.createElement('img');
+    imagen.className = 'escudo-equipo mini';
+    imagen.src = escudo;
+    imagen.alt = '';
+    grupo.appendChild(imagen);
+  }
+  const texto = document.createElement('span');
+  texto.textContent = nombre;
+  grupo.appendChild(texto);
+  return grupo;
+}
+
+function crearSelectorEquipo(inputId, botonId, opcionesId) {
+  const entrada = $(inputId);
+  const boton = $(botonId);
+  const opciones = $(opcionesId);
+
+  function cerrar() {
+    opciones.classList.add('oculto');
+    boton.setAttribute('aria-expanded', 'false');
+  }
+  function pintarBoton() {
+    boton.replaceChildren();
+    if (!entrada.value) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'selector-placeholder';
+      placeholder.textContent = 'Selecciona un equipo';
+      boton.appendChild(placeholder);
+      return;
+    }
+    const escudo = rutaEscudo(entrada.value);
+    if (escudo) {
+      const imagen = document.createElement('img');
+      imagen.className = 'escudo-equipo';
+      imagen.src = escudo;
+      imagen.alt = '';
+      boton.appendChild(imagen);
+    }
+    boton.append(document.createTextNode(entrada.value));
+  }
+  function pintarOpciones() {
+    opciones.replaceChildren();
+    EQUIPOS_PREMIER.forEach(([nombre]) => {
+      const opcion = document.createElement('button');
+      opcion.type = 'button';
+      opcion.className = 'opcion-equipo';
+      opcion.setAttribute('role', 'option');
+      opcion.setAttribute('aria-selected', String(entrada.value === nombre));
+      // Un mismo club no puede ser local y visitante en el mismo partido.
+      const otroInput = inputId === 'equipoLocal' ? $('equipoVisitante') : $('equipoLocal');
+      opcion.disabled = otroInput.value === nombre;
+      const escudo = rutaEscudo(nombre);
+      const imagen = document.createElement('img');
+      imagen.className = 'escudo-equipo';
+      imagen.src = escudo;
+      imagen.alt = '';
+      opcion.append(imagen, document.createTextNode(nombre));
+      opcion.onclick = () => {
+        entrada.value = nombre;
+        pintarBoton();
+        actualizarSelectoresEquipos();
+        cerrar();
+      };
+      opciones.appendChild(opcion);
+    });
+  }
+  boton.onclick = () => {
+    const abrir = opciones.classList.contains('oculto');
+    document.querySelectorAll('.opciones-equipo').forEach((lista) => lista.classList.add('oculto'));
+    document.querySelectorAll('.selector-equipo > button').forEach((control) => control.setAttribute('aria-expanded', 'false'));
+    if (abrir) {
+      pintarOpciones();
+      opciones.classList.remove('oculto');
+      boton.setAttribute('aria-expanded', 'true');
+    }
+  };
+  return { pintarBoton, pintarOpciones };
+}
+
+const selectoresEquipos = [
+  crearSelectorEquipo('equipoLocal', 'selectorEquipoLocal', 'opcionesEquipoLocal'),
+  crearSelectorEquipo('equipoVisitante', 'selectorEquipoVisitante', 'opcionesEquipoVisitante'),
+];
+function actualizarSelectoresEquipos() {
+  selectoresEquipos.forEach((selector) => { selector.pintarBoton(); selector.pintarOpciones(); });
+}
+document.addEventListener('click', (evento) => {
+  if (!evento.target.closest('.selector-equipo')) {
+    document.querySelectorAll('.opciones-equipo').forEach((lista) => lista.classList.add('oculto'));
+    document.querySelectorAll('.selector-equipo > button').forEach((control) => control.setAttribute('aria-expanded', 'false'));
+  }
+});
 
 const NOMBRE_ESTADO = {
   POR_JUGAR: 'Por jugar', EN_JUEGO: 'En juego', EN_REVISION: 'Revisión VAR',
@@ -279,8 +439,14 @@ function pintarPartidos() {
   partidosConocidos.forEach((partido) => {
     const chip = document.createElement('div');
     chip.className = 'chip' + (partido.match_id === partidoSeleccionado ? ' activo' : '');
-    chip.textContent = partido.home_team && partido.away_team
-      ? `${partido.home_team} vs ${partido.away_team}` : partido.match_id;
+    if (partido.home_team && partido.away_team) {
+      const enfrentamiento = document.createElement('span');
+      enfrentamiento.className = 'enfrentamiento-resumen';
+      enfrentamiento.append(nodoEquipo(partido.home_team), document.createTextNode(' vs '), nodoEquipo(partido.away_team));
+      chip.appendChild(enfrentamiento);
+    } else {
+      chip.textContent = partido.match_id;
+    }
     const detalle = document.createElement('small');
     detalle.textContent = partido.estado === 'EN_JUEGO'
       ? textoMinuto(partido.minuto, partido.minuto_extra) : NOMBRE_ESTADO[partido.estado];
@@ -300,9 +466,19 @@ function pintarReloj() {
     return;
   }
   $('relojMinuto').textContent = textoMinuto(partido.minuto, partido.minuto_extra);
-  const nombre = partido.home_team && partido.away_team
-    ? `${partido.home_team} vs ${partido.away_team}` : `Partido ${partido.match_id}`;
-  $('relojEstado').textContent = `${nombre} · ${NOMBRE_ESTADO[partido.estado]}`;
+  const estado = $('relojEstado');
+  estado.replaceChildren();
+  if (partido.home_team && partido.away_team) {
+    const enfrentamiento = document.createElement('div');
+    enfrentamiento.className = 'enfrentamiento-resumen';
+    enfrentamiento.append(nodoEquipo(partido.home_team), document.createTextNode(' vs '), nodoEquipo(partido.away_team));
+    estado.appendChild(enfrentamiento);
+  } else {
+    estado.append(`Partido ${partido.match_id}`);
+  }
+  const detalle = document.createElement('div');
+  detalle.textContent = NOMBRE_ESTADO[partido.estado];
+  estado.appendChild(detalle);
 }
 
 function pintarFormulario() {
@@ -373,19 +549,30 @@ function actualizarCamposSegunTipo() {
 $('btnCrearPartido').onclick = async () => {
   const matchId = $('nuevoMatchId').value.trim();
   if (!matchId) { registrar('Escribí un ID de partido primero', 'err'); return; }
+  const local = $('equipoLocal').value;
+  const visitante = $('equipoVisitante').value;
+  if (!local || !visitante) {
+    registrar('Seleccioná los equipos local y visitante de la Premier League', 'err');
+    return;
+  }
+  if (local === visitante) {
+    registrar('El equipo local y visitante deben ser distintos', 'err');
+    return;
+  }
   try {
     await pedir('/api/partidos', {
       method: 'POST',
       body: JSON.stringify({
         match_id: matchId,
-        home_team: $('equipoLocal').value.trim() || null,
-        away_team: $('equipoVisitante').value.trim() || null,
+        home_team: local,
+        away_team: visitante,
       }),
     });
     registrar(`Partido ${matchId} creado (por jugar)`, 'ok');
     $('nuevoMatchId').value = '';
     $('equipoLocal').value = '';
     $('equipoVisitante').value = '';
+    actualizarSelectoresEquipos();
     partidoSeleccionado = matchId;
     estadoAnterior = null;
     await refrescar();
